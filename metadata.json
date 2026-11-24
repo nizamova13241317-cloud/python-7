@@ -1,0 +1,6 @@
+{
+  "name": "Py7 Код",
+  "description": "Мобільний тренажер і редактор коду Python для учнів 7 класу зі змінними, функціями, циклами, розгалуженнями та графікою turtle.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

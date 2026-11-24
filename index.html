@@ -1,0 +1,3363 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Py7 — Тренажер Python (7 клас)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-2: #283548;
+      --editor-bg: #0b1120;
+      --output-bg: #090e1a;
+      --border: #334155;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --accent-ink: #022c22;
+      --blue: #38bdf8;
+      --turtle-bg: #0d2b2b;
+      --turtle-border: #14b8a6;
+      --turtle-text: #5eead4;
+      --danger: #ef4444;
+      --danger-bg: #2a1218;
+      --danger-border: #f87171;
+      --warn: #fbbf24;
+      --mono: "JetBrains Mono", "Fira Code", "SF Mono", "Roboto Mono", ui-monospace, Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      overscroll-behavior: none;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100dvh;
+      max-width: 100vw;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* Top Header */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 6px 8px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      min-height: 48px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+      color: var(--blue);
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: inline-block;
+    }
+
+    .view-switch {
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2px;
+      gap: 2px;
+      flex-shrink: 1;
+      min-width: 0;
+    }
+
+    .view-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      white-space: nowrap;
+      touch-action: manipulation;
+      min-height: 32px;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .view-btn.active {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+
+    .run-btn {
+      appearance: none;
+      border: none;
+      background: var(--accent);
+      color: #ffffff;
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 0 12px;
+      height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      flex-shrink: 0;
+      touch-action: manipulation;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    }
+
+    .run-btn:active {
+      transform: scale(0.97);
+    }
+
+    .run-btn.running {
+      background: var(--danger);
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    /* Main Workspace */
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .editor-pane {
+      flex: 1.15;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--editor-bg);
+      position: relative;
+    }
+
+    .editor-textarea {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      background: var(--editor-bg);
+      color: #e2e8f0;
+      font-family: var(--mono);
+      font-size: 16px;
+      line-height: 1.5;
+      padding: 12px;
+      tab-size: 4;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      overflow-y: auto;
+      overflow-x: hidden;
+      caret-color: var(--accent);
+    }
+
+    .editor-textarea::placeholder {
+      color: #475569;
+    }
+
+    .pane-divider {
+      height: 4px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .output-pane {
+      flex: 0.95;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--output-bg);
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px;
+      gap: 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* View Modes */
+    .app[data-view="code"] .output-pane,
+    .app[data-view="code"] .pane-divider {
+      display: none;
+    }
+    .app[data-view="code"] .editor-pane {
+      flex: 1;
+    }
+
+    .app[data-view="result"] .editor-pane,
+    .app[data-view="result"] .pane-divider,
+    .app[data-view="result"] .toolbars {
+      display: none;
+    }
+    .app[data-view="result"] .output-pane {
+      flex: 1;
+    }
+
+    /* Interactive input() Bar */
+    .input-bar {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      background: #172554;
+      border: 1px solid #3b82f6;
+      border-radius: 10px;
+      padding: 10px;
+      flex-shrink: 0;
+    }
+
+    .input-bar.visible {
+      display: flex;
+    }
+
+    .input-prompt-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #bfdbfe;
+      word-break: break-word;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .stdin-field {
+      flex: 1;
+      min-width: 0;
+      height: 42px;
+      border-radius: 8px;
+      border: 1px solid #60a5fa;
+      background: #0f172a;
+      color: #ffffff;
+      font-family: var(--mono);
+      font-size: 16px;
+      padding: 0 10px;
+      outline: none;
+    }
+
+    .stdin-submit {
+      height: 42px;
+      padding: 0 14px;
+      border: none;
+      border-radius: 8px;
+      background: #3b82f6;
+      color: #ffffff;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      flex-shrink: 0;
+    }
+
+    /* Ukrainian Error Card */
+    .error-card {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      flex-shrink: 0;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .error-card.visible {
+      display: flex;
+    }
+
+    .error-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #fca5a5;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .error-line-badge {
+      background: rgba(239, 68, 68, 0.25);
+      color: #fecaca;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .error-what {
+      color: #fee2e2;
+    }
+
+    .error-where {
+      background: rgba(15, 23, 42, 0.75);
+      border-left: 3px solid var(--danger-border);
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: #fecaca;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .error-fix {
+      color: #fde68a;
+      font-size: 13.5px;
+    }
+
+    /* Turtle Canvas */
+    .turtle-wrap {
+      display: none;
+      flex-direction: column;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+      min-height: 210px;
+      height: 240px;
+    }
+
+    .app[data-view="result"] .turtle-wrap {
+      height: 320px;
+      flex-shrink: 0;
+    }
+
+    .turtle-wrap.visible {
+      display: flex;
+    }
+
+    #turtle-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .turtle-hud {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      background: rgba(15, 23, 42, 0.78);
+      color: #e2e8f0;
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 6px;
+      pointer-events: none;
+    }
+
+    /* Console Text Output */
+    .console-out {
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.5;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 36px;
+    }
+
+    .console-placeholder {
+      color: #64748b;
+      font-family: var(--sans);
+      font-size: 13px;
+    }
+
+    .console-input-echo {
+      color: #93c5fd;
+    }
+
+    /* Bottom Toolbars */
+    .toolbars {
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .toolbar-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      border-top: 1px solid rgba(51, 65, 85, 0.55);
+    }
+
+    .toolbar-row:first-child {
+      border-top: none;
+    }
+
+    .toolbar-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .toolbar-row.turtle-bar {
+      display: none;
+      background: var(--turtle-bg);
+      border-bottom: 1px solid rgba(20, 184, 166, 0.35);
+    }
+
+    .toolbar-row.turtle-bar.visible {
+      display: flex;
+    }
+
+    .tb-btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 600;
+      height: 40px;
+      min-width: 40px;
+      padding: 0 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      white-space: nowrap;
+      user-select: none;
+      touch-action: pan-x manipulation;
+    }
+
+    .tb-btn:active {
+      background: #3b4c66;
+      transform: scale(0.96);
+    }
+
+    .tb-btn.kw {
+      color: #7dd3fc;
+      font-size: 13px;
+    }
+
+    .tb-btn.fn {
+      color: #fde68a;
+      font-size: 13px;
+    }
+
+    .tb-btn.turtle-cmd {
+      background: rgba(20, 184, 166, 0.14);
+      border-color: rgba(20, 184, 166, 0.45);
+      color: var(--turtle-text);
+      font-size: 13px;
+    }
+
+    .tb-btn.turtle-cmd:active {
+      background: rgba(20, 184, 166, 0.3);
+    }
+
+    .turtle-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--turtle-text);
+      padding-right: 4px;
+      flex-shrink: 0;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app" data-view="split">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span>Py7</span>
+      </div>
+
+      <div class="view-switch" role="tablist" aria-label="Режим екрана">
+        <button type="button" class="view-btn active" data-mode="split">Розділений</button>
+        <button type="button" class="view-btn" data-mode="code">Код</button>
+        <button type="button" class="view-btn" data-mode="result">Результат</button>
+      </div>
+
+      <button type="button" class="run-btn" id="run-btn">▶ Запустити</button>
+    </header>
+
+    <main class="workspace">
+      <section class="editor-pane">
+        <textarea
+          id="code-editor"
+          class="editor-textarea"
+          autocapitalize="off"
+          autocorrect="off"
+          autocomplete="off"
+          spellcheck="false"
+          enterkeyhint="enter"
+          placeholder="# Напиши код Python тут..."
+        ></textarea>
+      </section>
+
+      <div class="pane-divider"></div>
+
+      <section class="output-pane" id="output-pane" aria-live="polite">
+        <div class="input-bar" id="input-bar">
+          <div class="input-prompt-label" id="input-prompt-label">Введи значення:</div>
+          <div class="input-row">
+            <input
+              type="text"
+              id="stdin-input"
+              class="stdin-field"
+              autocapitalize="off"
+              autocorrect="off"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Введіть відповідь..."
+            />
+            <button type="button" id="stdin-submit" class="stdin-submit">Ввести</button>
+          </div>
+        </div>
+
+        <div class="error-card" id="error-card">
+          <div class="error-head">
+            <span id="error-title">Помилка у програмі</span>
+            <span class="error-line-badge" id="error-line-badge">Рядок 1</span>
+          </div>
+          <div class="error-what" id="error-what"></div>
+          <div class="error-where" id="error-where"></div>
+          <div class="error-fix" id="error-fix"></div>
+        </div>
+
+        <div class="turtle-wrap" id="turtle-wrap">
+          <canvas id="turtle-canvas"></canvas>
+          <div class="turtle-hud" id="turtle-hud">x: 0, y: 0 | кут: 0°</div>
+        </div>
+
+        <div class="console-out" id="console-out">
+          <span class="console-placeholder">Натисни «Запустити», щоб виконати програму.</span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="toolbars" id="toolbars">
+      <!-- Dynamic Turtle Toolbar (hidden unless turtle is imported) -->
+      <div class="toolbar-row turtle-bar" id="turtle-bar" aria-label="Команди turtle">
+        <span class="turtle-badge">🐢</span>
+        <button type="button" class="tb-btn turtle-cmd" tabindex="-1" data-turtle="shape">shape</button>
+        <button type="button" class="tb-btn turtle-cmd" tabindex="-1" data-turtle="width">width</button>
+        <button type="button" class="tb-btn turtle-cmd" tabindex="-1" data-turtle="color">color</button>
+        <button type="button" class="tb-btn turtle-cmd" tabindex="-1" data-turtle="forward">forward</button>
+        <button type="button" class="tb-btn turtle-cmd" tabindex="-1" data-turtle="left">left</button>
+        <button type="button" class="tb-btn turtle-cmd" tabindex="-1" data-turtle="right">right</button>
+        <button type="button" class="tb-btn turtle-cmd" tabindex="-1" data-turtle="goto">goto</button>
+        <button type="button" class="tb-btn turtle-cmd" tabindex="-1" data-turtle="begin_fill">begin_fill</button>
+        <button type="button" class="tb-btn turtle-cmd" tabindex="-1" data-turtle="end_fill">end_fill</button>
+      </div>
+
+      <!-- Second Toolbar: Constructs & Built-in Functions -->
+      <div class="toolbar-row" id="constructs-bar" aria-label="Конструкції Python">
+        <button type="button" class="tb-btn fn" tabindex="-1" data-snippet="print">print</button>
+        <button type="button" class="tb-btn fn" tabindex="-1" data-snippet="input">input</button>
+        <button type="button" class="tb-btn fn" tabindex="-1" data-snippet="int">int</button>
+        <button type="button" class="tb-btn fn" tabindex="-1" data-snippet="float">float</button>
+        <button type="button" class="tb-btn kw" tabindex="-1" data-snippet="if">if</button>
+        <button type="button" class="tb-btn kw" tabindex="-1" data-snippet="else">else</button>
+        <button type="button" class="tb-btn kw" tabindex="-1" data-snippet="elif">elif</button>
+        <button type="button" class="tb-btn kw" tabindex="-1" data-snippet="while">while</button>
+        <button type="button" class="tb-btn kw" tabindex="-1" data-snippet="for_range">for i in range</button>
+        <button type="button" class="tb-btn kw" tabindex="-1" data-snippet="def">def</button>
+      </div>
+
+      <!-- First Toolbar: Symbols & Operators -->
+      <div class="toolbar-row" id="symbols-bar" aria-label="Символи та оператори">
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="(">(</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym=")">)</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym=":">:</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym=";">;</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="!">!</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="<">&lt;</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym=">">&gt;</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="=">=</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="+">+</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="-">-</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="*">*</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="/">/</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="//">//</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="%">%</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym='""'>""</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym=",">,</button>
+        <button type="button" class="tb-btn" tabindex="-1" data-sym="    ">⇥</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const STORAGE_KEY = 'py7_trainer_code_v1';
+      const DEFAULT_CODE = 'name = "7 клас"\nprint("Привіт,", name)\n';
+
+      const appEl = document.getElementById('app');
+      const editor = document.getElementById('code-editor');
+      const runBtn = document.getElementById('run-btn');
+      const viewBtns = document.querySelectorAll('.view-btn');
+      const outputPane = document.getElementById('output-pane');
+      const consoleOut = document.getElementById('console-out');
+      const errorCard = document.getElementById('error-card');
+      const errorTitle = document.getElementById('error-title');
+      const errorLineBadge = document.getElementById('error-line-badge');
+      const errorWhat = document.getElementById('error-what');
+      const errorWhere = document.getElementById('error-where');
+      const errorFix = document.getElementById('error-fix');
+      const inputBar = document.getElementById('input-bar');
+      const inputPromptLabel = document.getElementById('input-prompt-label');
+      const stdinInput = document.getElementById('stdin-input');
+      const stdinSubmit = document.getElementById('stdin-submit');
+      const turtleBar = document.getElementById('turtle-bar');
+      const turtleWrap = document.getElementById('turtle-wrap');
+      const turtleCanvas = document.getElementById('turtle-canvas');
+      const turtleHud = document.getElementById('turtle-hud');
+
+      // Sync viewport height when on-screen keyboard appears on mobile browsers
+      function syncViewportHeight() {
+        if (window.visualViewport) {
+          appEl.style.height = window.visualViewport.height + 'px';
+        }
+        if (turtleWrap.classList.contains('visible')) {
+          turtleEngine.render();
+        }
+      }
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', syncViewportHeight);
+      }
+      window.addEventListener('resize', () => {
+        if (turtleWrap.classList.contains('visible')) {
+          turtleEngine.render();
+        }
+      });
+
+      // Load saved code
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        editor.value = saved !== null ? saved : DEFAULT_CODE;
+      } catch (_) {
+        editor.value = DEFAULT_CODE;
+      }
+
+      function saveCode() {
+        try {
+          localStorage.setItem(STORAGE_KEY, editor.value);
+        } catch (_) {}
+      }
+
+      // Detect turtle import in code
+      function detectTurtleMode(code) {
+        const lines = code.split(/\r?\n/);
+        let active = false;
+        let style = 'none'; // 'direct' | 'module' | 'alias'
+        let alias = 'turtle';
+        let instanceVar = null;
+
+        for (const raw of lines) {
+          const line = raw.replace(/#.*$/, '').trim();
+          if (!line) continue;
+          const mImportAs = line.match(/^import\s+turtle\s+as\s+([A-Za-z_]\w*)$/);
+          if (mImportAs) {
+            active = true;
+            style = 'alias';
+            alias = mImportAs[1];
+            continue;
+          }
+          if (/^import\s+turtle\b/.test(line)) {
+            active = true;
+            if (style === 'none') {
+              style = 'module';
+              alias = 'turtle';
+            }
+            continue;
+          }
+          if (/^from\s+turtle\s+import\b/.test(line)) {
+            active = true;
+            style = 'direct';
+            continue;
+          }
+          const mTurtleObj = line.match(/^([A-Za-z_]\w*)\s*=\s*(?:[A-Za-z_]\w*\.)?Turtle\s*\(/);
+          if (mTurtleObj) {
+            instanceVar = mTurtleObj[1];
+          }
+        }
+        return { active, style, alias, instanceVar };
+      }
+
+      function updateTurtleToolbar() {
+        const info = detectTurtleMode(editor.value);
+        turtleBar.classList.toggle('visible', info.active);
+      }
+      updateTurtleToolbar();
+
+      editor.addEventListener('input', () => {
+        saveCode();
+        updateTurtleToolbar();
+      });
+
+      // View Switcher
+      function setViewMode(mode) {
+        appEl.setAttribute('data-view', mode);
+        viewBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+        if (mode !== 'code' && turtleWrap.classList.contains('visible')) {
+          requestAnimationFrame(() => turtleEngine.render());
+        }
+      }
+
+      viewBtns.forEach((btn) => {
+        btn.addEventListener('click', () => setViewMode(btn.dataset.mode));
+      });
+
+      // Helper: Insert text at cursor preserving focus
+      function getCurrentLineIndent() {
+        const val = editor.value;
+        const pos = editor.selectionStart || 0;
+        const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
+        const lineUpToCursor = val.slice(lineStart, pos);
+        const m = lineUpToCursor.match(/^[ \t]*/);
+        return m ? m[0].replace(/\t/g, '    ') : '';
+      }
+
+      function insertAtCursor(text, cursorOffsetFromInsertStart = text.length) {
+        const start = editor.selectionStart ?? editor.value.length;
+        const end = editor.selectionEnd ?? start;
+        const before = editor.value.slice(0, start);
+        const after = editor.value.slice(end);
+        editor.value = before + text + after;
+        const nextPos = start + cursorOffsetFromInsertStart;
+        if (document.activeElement !== editor) {
+          editor.focus({ preventScroll: true });
+        }
+        editor.setSelectionRange(nextPos, nextPos);
+        saveCode();
+        updateTurtleToolbar();
+      }
+
+      // Preserve focus without blocking horizontal scroll on touch
+      document.getElementById('toolbars').addEventListener('mousedown', (e) => {
+        if (e.target.closest('.tb-btn')) {
+          e.preventDefault();
+        }
+      });
+
+      // Handle Enter auto-indent & Tab
+      let enterHandledByKeydown = false;
+
+      function handleSmartEnter() {
+        const pos = editor.selectionStart ?? editor.value.length;
+        const val = editor.value;
+        const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
+        const lineBeforeCursor = val.slice(lineStart, pos);
+        const baseIndentMatch = lineBeforeCursor.match(/^[ \t]*/);
+        let indent = baseIndentMatch ? baseIndentMatch[0].replace(/\t/g, '    ') : '';
+        const codePart = lineBeforeCursor.replace(/#.*$/, '').trimEnd();
+        if (codePart.endsWith(':')) {
+          indent += '    ';
+        }
+        insertAtCursor('\n' + indent, 1 + indent.length);
+      }
+
+      editor.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+          e.preventDefault();
+          enterHandledByKeydown = true;
+          handleSmartEnter();
+          setTimeout(() => { enterHandledByKeydown = false; }, 0);
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          insertAtCursor('    ', 4);
+        }
+      });
+
+      editor.addEventListener('beforeinput', (e) => {
+        if (e.inputType === 'insertLineBreak' && !enterHandledByKeydown) {
+          e.preventDefault();
+          handleSmartEnter();
+        }
+      });
+
+      // Symbol Toolbar clicks
+      document.getElementById('symbols-bar').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-sym]');
+        if (!btn) return;
+        const sym = btn.dataset.sym;
+        if (sym === '""') {
+          insertAtCursor('""', 1);
+        } else if (sym === '()') {
+          insertAtCursor('()', 1);
+        } else {
+          insertAtCursor(sym, sym.length);
+        }
+      });
+
+      // Constructs Toolbar clicks
+      document.getElementById('constructs-bar').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-snippet]');
+        if (!btn) return;
+        const type = btn.dataset.snippet;
+        const indent = getCurrentLineIndent();
+
+        switch (type) {
+          case 'print':
+            insertAtCursor('print()', 6);
+            break;
+          case 'input':
+            insertAtCursor('input()', 6);
+            break;
+          case 'int':
+            insertAtCursor('int()', 4);
+            break;
+          case 'float':
+            insertAtCursor('float()', 6);
+            break;
+          case 'if':
+            insertAtCursor(`if :\n${indent}    `, 3);
+            break;
+          case 'else':
+            insertAtCursor(`else:\n${indent}    `, 6 + indent.length + 4);
+            break;
+          case 'elif':
+            insertAtCursor(`elif :\n${indent}    `, 5);
+            break;
+          case 'while':
+            insertAtCursor(`while :\n${indent}    `, 6);
+            break;
+          case 'for_range':
+            insertAtCursor(`for i in range():\n${indent}    `, 15);
+            break;
+          case 'def':
+            insertAtCursor(`def func():\n${indent}    `, 8);
+            break;
+        }
+      });
+
+      // Dynamic Turtle Toolbar clicks
+      turtleBar.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-turtle]');
+        if (!btn) return;
+        const cmd = btn.dataset.turtle;
+        const info = detectTurtleMode(editor.value);
+        let prefix = '';
+        if (info.instanceVar) {
+          prefix = info.instanceVar + '.';
+        } else if (info.style === 'module' || info.style === 'alias') {
+          prefix = info.alias + '.';
+        }
+
+        const templates = {
+          shape: [`${prefix}shape("")`, `${prefix}shape("`.length],
+          width: [`${prefix}width()`, `${prefix}width(`.length],
+          color: [`${prefix}color("")`, `${prefix}color("`.length],
+          forward: [`${prefix}forward()`, `${prefix}forward(`.length],
+          left: [`${prefix}left()`, `${prefix}left(`.length],
+          right: [`${prefix}right()`, `${prefix}right(`.length],
+          goto: [`${prefix}goto(, )`, `${prefix}goto(`.length],
+          begin_fill: [`${prefix}begin_fill()`, `${prefix}begin_fill()`.length],
+          end_fill: [`${prefix}end_fill()`, `${prefix}end_fill()`.length],
+        };
+
+        const tpl = templates[cmd];
+        if (tpl) {
+          insertAtCursor(tpl[0], tpl[1]);
+        }
+      });
+
+      /* ============================================================
+         TURTLE GRAPHICS ENGINE
+         ============================================================ */
+      const turtleEngine = {
+        x: 0,
+        y: 0,
+        angle: 0, // degrees, 0 = right, 90 = up
+        penDown: true,
+        penColor: '#0f172a',
+        fillColor: '#0f172a',
+        bgColor: '#ffffff',
+        lineWidth: 2,
+        shape: 'classic',
+        visible: true,
+        speed: 6,
+        filling: false,
+        fillStartIdx: 0,
+        fillPoints: [],
+        commands: [], // { type: 'line'|'fill'|'dot', ... }
+
+        reset() {
+          this.x = 0;
+          this.y = 0;
+          this.angle = 0;
+          this.penDown = true;
+          this.penColor = '#0f172a';
+          this.fillColor = '#0f172a';
+          this.bgColor = '#ffffff';
+          this.lineWidth = 2;
+          this.shape = 'classic';
+          this.visible = true;
+          this.speed = 6;
+          this.filling = false;
+          this.fillStartIdx = 0;
+          this.fillPoints = [];
+          this.commands = [];
+          this.updateHud();
+          this.render();
+        },
+
+        clearDrawing() {
+          this.commands = [];
+          this.filling = false;
+          this.fillStartIdx = 0;
+          this.fillPoints = [];
+          this.render();
+        },
+
+        updateHud() {
+          const rx = Math.round(this.x * 10) / 10;
+          const ry = Math.round(this.y * 10) / 10;
+          const ra = Math.round(((this.angle % 360) + 360) % 360);
+          turtleHud.textContent = `x: ${rx}, y: ${ry} | кут: ${ra}°`;
+        },
+
+        moveTo(nx, ny) {
+          if (this.penDown) {
+            this.commands.push({
+              type: 'line',
+              x1: this.x,
+              y1: this.y,
+              x2: nx,
+              y2: ny,
+              color: this.penColor,
+              width: this.lineWidth
+            });
+          }
+          this.x = nx;
+          this.y = ny;
+          if (this.filling) {
+            this.fillPoints.push({ x: nx, y: ny });
+          }
+          this.updateHud();
+          this.render();
+        },
+
+        forward(dist) {
+          const rad = (this.angle * Math.PI) / 180;
+          const nx = this.x + dist * Math.cos(rad);
+          const ny = this.y + dist * Math.sin(rad);
+          this.moveTo(nx, ny);
+        },
+
+        left(deg) {
+          this.angle += deg;
+          this.updateHud();
+          this.render();
+        },
+
+        right(deg) {
+          this.angle -= deg;
+          this.updateHud();
+          this.render();
+        },
+
+        setHeading(deg) {
+          this.angle = deg;
+          this.updateHud();
+          this.render();
+        },
+
+        beginFill() {
+          this.filling = true;
+          this.fillStartIdx = this.commands.length;
+          this.fillPoints = [{ x: this.x, y: this.y }];
+        },
+
+        endFill() {
+          if (this.filling && this.fillPoints.length >= 3) {
+            this.commands.splice(this.fillStartIdx, 0, {
+              type: 'fill',
+              points: this.fillPoints.slice(),
+              color: this.fillColor
+            });
+          }
+          this.filling = false;
+          this.fillPoints = [];
+          this.render();
+        },
+
+        dot(size, color) {
+          const d = size ?? Math.max(this.lineWidth + 4, this.lineWidth * 2);
+          this.commands.push({
+            type: 'dot',
+            x: this.x,
+            y: this.y,
+            size: d,
+            color: color || this.penColor
+          });
+          this.render();
+        },
+
+        circle(radius, extent = 360, steps = null) {
+          if (radius === 0) return;
+          const absR = Math.abs(radius);
+          const segs = steps ? Math.max(3, Math.round(steps)) : Math.max(18, Math.min(90, Math.round((Math.abs(extent) / 360) * Math.max(24, absR * 0.6))));
+          const stepAngle = (extent / segs) * (radius >= 0 ? 1 : -1);
+          const chord = 2 * absR * Math.sin((Math.abs(extent) * Math.PI) / (360 * segs));
+          for (let i = 0; i < segs; i++) {
+            this.angle += stepAngle / 2;
+            const rad = (this.angle * Math.PI) / 180;
+            const nx = this.x + chord * Math.cos(rad);
+            const ny = this.y + chord * Math.sin(rad);
+            if (this.penDown) {
+              this.commands.push({
+                type: 'line',
+                x1: this.x,
+                y1: this.y,
+                x2: nx,
+                y2: ny,
+                color: this.penColor,
+                width: this.lineWidth
+              });
+            }
+            this.x = nx;
+            this.y = ny;
+            if (this.filling) {
+              this.fillPoints.push({ x: nx, y: ny });
+            }
+            this.angle += stepAngle / 2;
+          }
+          this.updateHud();
+          this.render();
+        },
+
+        async stepDelay() {
+          if (this.speed === 0 || this.speed >= 10) return;
+          const ms = Math.max(6, (10 - this.speed) * 14);
+          await new Promise((r) => setTimeout(r, ms));
+        },
+
+        render() {
+          const rect = turtleWrap.getBoundingClientRect();
+          if (!rect.width || !rect.height) return;
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const w = Math.round(rect.width * dpr);
+          const h = Math.round(rect.height * dpr);
+          if (turtleCanvas.width !== w || turtleCanvas.height !== h) {
+            turtleCanvas.width = w;
+            turtleCanvas.height = h;
+          }
+          const ctx = turtleCanvas.getContext('2d');
+          ctx.save();
+          ctx.scale(dpr, dpr);
+
+          const cw = rect.width;
+          const ch = rect.height;
+          const cx = cw / 2;
+          const cy = ch / 2;
+
+          // Background
+          ctx.fillStyle = this.bgColor || '#ffffff';
+          ctx.fillRect(0, 0, cw, ch);
+
+          // Subtle coordinate axes at center
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.28)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, cy);
+          ctx.lineTo(cw, cy);
+          ctx.moveTo(cx, 0);
+          ctx.lineTo(cx, ch);
+          ctx.stroke();
+
+          // Pass 1: Fills (and lines interleaved in command order)
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          for (const cmd of this.commands) {
+            if (cmd.type === 'fill') {
+              ctx.fillStyle = cmd.color;
+              ctx.beginPath();
+              cmd.points.forEach((pt, idx) => {
+                const sx = cx + pt.x;
+                const sy = cy - pt.y;
+                if (idx === 0) ctx.moveTo(sx, sy);
+                else ctx.lineTo(sx, sy);
+              });
+              ctx.closePath();
+              ctx.fill();
+            } else if (cmd.type === 'line') {
+              ctx.strokeStyle = cmd.color;
+              ctx.lineWidth = cmd.width;
+              ctx.beginPath();
+              ctx.moveTo(cx + cmd.x1, cy - cmd.y1);
+              ctx.lineTo(cx + cmd.x2, cy - cmd.y2);
+              ctx.stroke();
+            } else if (cmd.type === 'dot') {
+              ctx.fillStyle = cmd.color;
+              ctx.beginPath();
+              ctx.arc(cx + cmd.x, cy - cmd.y, cmd.size / 2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          // Turtle cursor
+          if (this.visible) {
+            ctx.save();
+            ctx.translate(cx + this.x, cy - this.y);
+            ctx.rotate((-this.angle * Math.PI) / 180);
+            this.drawCursor(ctx);
+            ctx.restore();
+          }
+
+          ctx.restore();
+        },
+
+        drawCursor(ctx) {
+          const fill = this.fillColor || '#10b981';
+          const stroke = this.penColor || '#0f172a';
+          ctx.fillStyle = fill;
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = 1.6;
+
+          switch (this.shape) {
+            case 'turtle': {
+              // Legs
+              ctx.fillStyle = '#059669';
+              [[-5, -7], [5, -7], [-5, 7], [5, 7]].forEach(([lx, ly]) => {
+                ctx.beginPath();
+                ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+              });
+              // Head
+              ctx.beginPath();
+              ctx.arc(9, 0, 3.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+              // Shell
+              ctx.fillStyle = fill === '#0f172a' ? '#10b981' : fill;
+              ctx.beginPath();
+              ctx.ellipse(0, 0, 7.5, 6, 0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+              break;
+            }
+            case 'circle': {
+              ctx.beginPath();
+              ctx.arc(0, 0, 6.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+              break;
+            }
+            case 'square': {
+              ctx.beginPath();
+              ctx.rect(-6, -6, 12, 12);
+              ctx.fill();
+              ctx.stroke();
+              break;
+            }
+            case 'triangle': {
+              ctx.beginPath();
+              ctx.moveTo(9, 0);
+              ctx.lineTo(-6, -6);
+              ctx.lineTo(-6, 6);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+              break;
+            }
+            case 'arrow':
+            case 'classic':
+            default: {
+              ctx.beginPath();
+              ctx.moveTo(10, 0);
+              ctx.lineTo(-6, -5.5);
+              ctx.lineTo(-3, 0);
+              ctx.lineTo(-6, 5.5);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+              break;
+            }
+          }
+        }
+      };
+
+      /* ============================================================
+         UKRAINIAN FRIENDLY ERROR HELPER
+         ============================================================ */
+      class PyTutorError extends Error {
+        constructor({ title, line, what, fix }) {
+          super(what);
+          this.title = title || 'Помилка у програмі';
+          this.line = line || 1;
+          this.what = what;
+          this.fix = fix;
+        }
+      }
+
+      function levenshtein(a, b) {
+        const m = a.length, n = b.length;
+        const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+        for (let i = 0; i <= m; i++) dp[i][0] = i;
+        for (let j = 0; j <= n; j++) dp[0][j] = j;
+        for (let i = 1; i <= m; i++) {
+          for (let j = 1; j <= n; j++) {
+            dp[i][j] = Math.min(
+              dp[i - 1][j] + 1,
+              dp[i][j - 1] + 1,
+              dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+            );
+          }
+        }
+        return dp[m][n];
+      }
+
+      function findClosestName(target, candidates) {
+        let best = null;
+        let bestDist = 3;
+        for (const c of candidates) {
+          const d = levenshtein(target.toLowerCase(), c.toLowerCase());
+          if (d < bestDist) {
+            bestDist = d;
+            best = c;
+          }
+        }
+        return best;
+      }
+
+      const TURTLE_COMMANDS = new Set([
+        'forward', 'fd', 'backward', 'bk', 'back', 'left', 'lt', 'right', 'rt',
+        'goto', 'setpos', 'setposition', 'setx', 'sety', 'home', 'setheading', 'seth',
+        'penup', 'pu', 'up', 'pendown', 'pd', 'down', 'width', 'pensize',
+        'color', 'pencolor', 'fillcolor', 'bgcolor', 'shape',
+        'begin_fill', 'end_fill', 'circle', 'dot', 'hideturtle', 'ht',
+        'showturtle', 'st', 'speed', 'clear', 'reset', 'done', 'mainloop',
+        'xcor', 'ycor', 'heading', 'position', 'pos'
+      ]);
+
+      /* ============================================================
+         PYTHON SUBSET LEXER
+         ============================================================ */
+      const KEYWORDS = new Set([
+        'False', 'None', 'True', 'and', 'as', 'break', 'continue', 'def',
+        'elif', 'else', 'for', 'from', 'global', 'if', 'import', 'in',
+        'is', 'not', 'or', 'pass', 'return', 'while'
+      ]);
+
+      function tokenize(source) {
+        const rawLines = source.replace(/\r\n?/g, '\n').split('\n');
+        const tokens = [];
+        const indentStack = [0];
+        const openBrackets = []; // { char, line }
+
+        for (let lineIdx = 0; lineIdx < rawLines.length; lineIdx++) {
+          const lineNum = lineIdx + 1;
+          const rawLine = rawLines[lineIdx];
+
+          // Normalize leading tabs to 4 spaces
+          let i = 0;
+          let indent = 0;
+          while (i < rawLine.length && (rawLine[i] === ' ' || rawLine[i] === '\t')) {
+            indent += rawLine[i] === '\t' ? 4 : 1;
+            i++;
+          }
+
+          // Skip blank or comment-only lines
+          if (i >= rawLine.length || rawLine[i] === '#') {
+            continue;
+          }
+
+          // Handle indentation only when not inside () or []
+          if (openBrackets.length === 0) {
+            const topIndent = indentStack[indentStack.length - 1];
+            if (indent > topIndent) {
+              if (tokens.length === 0) {
+                throw new PyTutorError({
+                  title: 'Помилка відступу (IndentationError)',
+                  line: lineNum,
+                  what: 'Перший рядок програми починається з зайвого відступу (пробілів на початку).',
+                  fix: 'Прибери зайві пробіли на початку цього рядка, щоб код починався з лівого краю.'
+                });
+              }
+              indentStack.push(indent);
+              tokens.push({ type: 'INDENT', value: indent, line: lineNum });
+            } else if (indent < topIndent) {
+              while (indentStack.length > 1 && indent < indentStack[indentStack.length - 1]) {
+                indentStack.pop();
+                tokens.push({ type: 'DEDENT', value: indent, line: lineNum });
+              }
+              if (indent !== indentStack[indentStack.length - 1]) {
+                throw new PyTutorError({
+                  title: 'Помилка відступу (IndentationError)',
+                  line: lineNum,
+                  what: 'Відступ у цьому рядку не збігається з жодним попереднім рівнем блоку.',
+                  fix: 'Вирівняй кількість пробілів на початку рядка (використовуй по 4 пробіли на кожен рівень після двокрапки :).'
+                });
+              }
+            }
+          }
+
+          // Scan tokens on line
+          while (i < rawLine.length) {
+            const ch = rawLine[i];
+
+            if (ch === ' ' || ch === '\t') {
+              i++;
+              continue;
+            }
+            if (ch === '#') {
+              break;
+            }
+
+            // f-string or normal string
+            let isFString = false;
+            if ((ch === 'f' || ch === 'F') && (rawLine[i + 1] === '"' || rawLine[i + 1] === "'")) {
+              isFString = true;
+              i++;
+            }
+
+            if (rawLine[i] === '"' || rawLine[i] === "'") {
+              const quote = rawLine[i];
+              i++;
+              let strVal = '';
+              let closed = false;
+              while (i < rawLine.length) {
+                const c = rawLine[i];
+                if (c === '\\') {
+                  if (i + 1 < rawLine.length) {
+                    const next = rawLine[i + 1];
+                    if (next === 'n') strVal += '\n';
+                    else if (next === 't') strVal += '\t';
+                    else if (next === '\\') strVal += '\\';
+                    else if (next === '"') strVal += '"';
+                    else if (next === "'") strVal += "'";
+                    else strVal += '\\' + next;
+                    i += 2;
+                    continue;
+                  }
+                }
+                if (c === quote) {
+                  closed = true;
+                  i++;
+                  break;
+                }
+                strVal += c;
+                i++;
+              }
+              if (!closed) {
+                throw new PyTutorError({
+                  title: 'Незакриті лапки (SyntaxError)',
+                  line: lineNum,
+                  what: `Текст відкрито лапкою ${quote}, але забули закрити її в кінці рядка.`,
+                  fix: `Додай закриваючу лапку ${quote} у кінці тексту.`
+                });
+              }
+              tokens.push({ type: isFString ? 'FSTRING' : 'STRING', value: strVal, line: lineNum });
+              continue;
+            }
+
+            // Numbers
+            if (/[0-9]/.test(ch) || (ch === '.' && /[0-9]/.test(rawLine[i + 1] || ''))) {
+              let numStr = '';
+              let hasDot = false;
+              while (i < rawLine.length && (/[0-9]/.test(rawLine[i]) || (!hasDot && rawLine[i] === '.'))) {
+                if (rawLine[i] === '.') hasDot = true;
+                numStr += rawLine[i];
+                i++;
+              }
+              if (/[A-Za-z_]/.test(rawLine[i] || '')) {
+                throw new PyTutorError({
+                  title: 'Неправильне ім’я або число (SyntaxError)',
+                  line: lineNum,
+                  what: 'Ім’я змінної не може починатися з цифри або літери стоять злито з числом.',
+                  fix: 'Назва змінної має починатися з літери або _, а між числом і словом потрібен пробіл чи знак операції.'
+                });
+              }
+              tokens.push({
+                type: 'NUMBER',
+                value: hasDot ? parseFloat(numStr) : parseInt(numStr, 10),
+                isFloat: hasDot,
+                line: lineNum
+              });
+              continue;
+            }
+
+            // Identifiers & Keywords
+            if (/[A-Za-z_]/.test(ch)) {
+              let id = '';
+              while (i < rawLine.length && /[A-Za-z0-9_]/.test(rawLine[i])) {
+                id += rawLine[i];
+                i++;
+              }
+              tokens.push({
+                type: KEYWORDS.has(id) ? 'KEYWORD' : 'IDENT',
+                value: id,
+                line: lineNum
+              });
+              continue;
+            }
+
+            // Two-char & Three-char operators
+            const three = rawLine.slice(i, i + 3);
+            if (three === '//=' || three === '**=') {
+              tokens.push({ type: 'OP', value: three, line: lineNum });
+              i += 3;
+              continue;
+            }
+            const two = rawLine.slice(i, i + 2);
+            if (['**', '//', '==', '!=', '<=', '>=', '+=', '-=', '*=', '/=', '%='].includes(two)) {
+              tokens.push({ type: 'OP', value: two, line: lineNum });
+              i += 2;
+              continue;
+            }
+
+            // Brackets
+            if (ch === '(' || ch === '[') {
+              openBrackets.push({ char: ch, line: lineNum });
+              tokens.push({ type: 'OP', value: ch, line: lineNum });
+              i++;
+              continue;
+            }
+            if (ch === ')' || ch === ']') {
+              const expected = ch === ')' ? '(' : '[';
+              if (openBrackets.length === 0) {
+                throw new PyTutorError({
+                  title: 'Зайва дужка (SyntaxError)',
+                  line: lineNum,
+                  what: `Знайдено закриваючу дужку «${ch}», але для неї немає відкриваючої «${expected}».`,
+                  fix: `Прибери зайву дужку «${ch}» або додай відкриваючу «${expected}» перед нею.`
+                });
+              }
+              const last = openBrackets.pop();
+              if (last.char !== expected) {
+                throw new PyTutorError({
+                  title: 'Неузгоджені дужки (SyntaxError)',
+                  line: lineNum,
+                  what: `Відкрито «${last.char}» у рядку ${last.line}, а закрито «${ch}» у рядку ${lineNum}.`,
+                  fix: `Заміни дужку на правильну пару (${last.char === '(' ? ')' : ']'}).`
+                });
+              }
+              tokens.push({ type: 'OP', value: ch, line: lineNum });
+              i++;
+              continue;
+            }
+
+            // Single-char operators & punctuation
+            if ('+-*/%<>=.,:;'.includes(ch)) {
+              tokens.push({ type: 'OP', value: ch, line: lineNum });
+              i++;
+              continue;
+            }
+
+            if (ch === '!') {
+              throw new PyTutorError({
+                title: 'Невідомий символ «!» (SyntaxError)',
+                line: lineNum,
+                what: 'У Python знак «!» сам по собі не використовується. Для «не дорівнює» пишуть «!=», а для логічного заперечення — слово «not».',
+                fix: 'Заміни «!» на «!=» (якщо це порівняння) або на слово «not».'
+              });
+            }
+
+            // Friendly Ukrainian quote mistakes (‘ ’ “ ” « »)
+            if ('“”«»‘’'.includes(ch)) {
+              throw new PyTutorError({
+                title: 'Неправильні лапки (SyntaxError)',
+                line: lineNum,
+                what: `Використано типографські лапки «${ch}», які Python не розуміє.`,
+                fix: 'Заміни їх на звичайні прямі лапки " або \' (можна вставити кнопкою "" на панелі).'
+              });
+            }
+
+            throw new PyTutorError({
+              title: 'Невідомий символ (SyntaxError)',
+              line: lineNum,
+              what: `У коді зустрівся незрозумілий для Python символ «${ch}».`,
+              fix: 'Перевір правопис у цьому рядку та прибери зайвий символ.'
+            });
+          }
+
+          if (openBrackets.length === 0) {
+            tokens.push({ type: 'NEWLINE', value: '\n', line: lineNum });
+          }
+        }
+
+        if (openBrackets.length > 0) {
+          const unclosed = openBrackets[openBrackets.length - 1];
+          const pair = unclosed.char === '(' ? ')' : ']';
+          throw new PyTutorError({
+            title: 'Незакрита дужка (SyntaxError)',
+            line: unclosed.line,
+            what: `У рядку ${unclosed.line} відкрито дужку «${unclosed.char}», але її забули закрити.`,
+            fix: `Додай закриваючу дужку «${pair}» у потрібному місці.`
+          });
+        }
+
+        while (indentStack.length > 1) {
+          indentStack.pop();
+          tokens.push({ type: 'DEDENT', value: 0, line: rawLines.length });
+        }
+        tokens.push({ type: 'EOF', value: null, line: rawLines.length });
+        return tokens;
+      }
+
+      /* ============================================================
+         PYTHON SUBSET PARSER (AST)
+         ============================================================ */
+      function parse(tokens, rawLines) {
+        let pos = 0;
+        const peek = (offset = 0) => tokens[Math.min(pos + offset, tokens.length - 1)];
+        const at = (type, value = null) => {
+          const t = peek();
+          if (t.type !== type) return false;
+          return value === null ? true : t.value === value;
+        };
+        const advance = () => tokens[pos++];
+
+        function expect(type, value, errorInfo) {
+          const t = peek();
+          if (t.type === type && (value === null || t.value === value)) {
+            return advance();
+          }
+          throw new PyTutorError({
+            title: errorInfo.title || 'Синтаксична помилка (SyntaxError)',
+            line: errorInfo.line || t.line,
+            what: errorInfo.what,
+            fix: errorInfo.fix
+          });
+        }
+
+        function skipNewlines() {
+          while (at('NEWLINE')) advance();
+        }
+
+        function parseProgram() {
+          const body = [];
+          skipNewlines();
+          while (!at('EOF')) {
+            body.push(...parseStatementLine());
+            skipNewlines();
+          }
+          return { type: 'Program', body };
+        }
+
+        function parseStatementLine() {
+          const t = peek();
+          // Compound statements cannot be chained after ';' cleanly, handle directly
+          if (
+            (t.type === 'KEYWORD' && ['if', 'while', 'for', 'def'].includes(t.value))
+          ) {
+            return [parseStatement()];
+          }
+          const stmts = [parseSimpleStatement()];
+          while (at('OP', ';')) {
+            advance();
+            if (at('NEWLINE') || at('EOF')) break;
+            stmts.push(parseSimpleStatement());
+          }
+          if (at('NEWLINE')) advance();
+          else if (!at('EOF') && !at('DEDENT')) {
+            const cur = peek();
+            throw new PyTutorError({
+              title: 'Синтаксична помилка (SyntaxError)',
+              line: cur.line,
+              what: `Неочікуваний елемент «${cur.value}» у цьому рядку.`,
+              fix: 'Перевір, чи не пропущено знак операції, кому або перенос рядка.'
+            });
+          }
+          return stmts;
+        }
+
+        function parseBlock(parentKeyword, headerLine) {
+          if (!at('OP', ':')) {
+            throw new PyTutorError({
+              title: 'Пропущено двокрапку «:» (SyntaxError)',
+              line: headerLine,
+              what: `Після умови або заголовка «${parentKeyword}» обов’язково має стояти двокрапка (:).`,
+              fix: `Додай символ «:» у кінці рядка ${headerLine}.`
+            });
+          }
+          advance(); // consume ':'
+
+          if (!at('NEWLINE')) {
+            // Single-line suite like `if x > 0: print(x)`
+            const inlineStmts = [parseSimpleStatement()];
+            while (at('OP', ';')) {
+              advance();
+              if (at('NEWLINE') || at('EOF')) break;
+              inlineStmts.push(parseSimpleStatement());
+            }
+            if (at('NEWLINE')) advance();
+            return inlineStmts;
+          }
+
+          advance(); // NEWLINE
+          skipNewlines();
+
+          if (!at('INDENT')) {
+            throw new PyTutorError({
+              title: 'Очікується відступ (IndentationError)',
+              line: Math.min(headerLine + 1, rawLines.length),
+              what: `Після рядка з «${parentKeyword} ... :» наступний рядок має бути з відступом (4 пробіли).`,
+              fix: `Додай 4 пробіли на початку рядка під «${parentKeyword}» (можна кнопкою ⇥).`
+            });
+          }
+          advance(); // INDENT
+
+          const body = [];
+          skipNewlines();
+          while (!at('DEDENT') && !at('EOF')) {
+            body.push(...parseStatementLine());
+            skipNewlines();
+          }
+          if (at('DEDENT')) advance();
+          return body;
+        }
+
+        function checkAssignmentInCondition(condLine) {
+          // Catch `if x = 5:` style mistake cleanly during parsing
+        }
+
+        function parseStatement() {
+          const t = peek();
+          if (t.type === 'KEYWORD') {
+            if (t.value === 'if') return parseIf();
+            if (t.value === 'while') return parseWhile();
+            if (t.value === 'for') return parseFor();
+            if (t.value === 'def') return parseDef();
+          }
+          const stmts = parseStatementLine();
+          return stmts[0];
+        }
+
+        function parseCondition(kw, line) {
+          // Peek ahead before ':' or NEWLINE to catch single '=' mistake
+          let scan = pos;
+          let depth = 0;
+          while (scan < tokens.length) {
+            const tk = tokens[scan];
+            if (tk.type === 'NEWLINE' || tk.type === 'EOF') break;
+            if (tk.type === 'OP' && (tk.value === '(' || tk.value === '[')) depth++;
+            if (tk.type === 'OP' && (tk.value === ')' || tk.value === ']')) depth--;
+            if (depth === 0 && tk.type === 'OP' && tk.value === ':') break;
+            if (depth === 0 && tk.type === 'OP' && tk.value === '=') {
+              throw new PyTutorError({
+                title: 'Плутанина «=» і «==» (SyntaxError)',
+                line: tk.line,
+                what: `В умові «${kw}» використано один знак «=», який записує значення у змінну, а не порівнює.`,
+                fix: 'Для порівняння двох значень в умові використовуй подвійний знак «==», наприклад: if x == 5:'
+              });
+            }
+            scan++;
+          }
+          if (at('OP', ':') || at('NEWLINE')) {
+            throw new PyTutorError({
+              title: 'Порожня умова (SyntaxError)',
+              line,
+              what: `Після слова «${kw}» потрібно написати умову (наприклад, x > 0).`,
+              fix: `Додай логічний вираз між «${kw}» і «:».`
+            });
+          }
+          return parseExpr();
+        }
+
+        function parseIf() {
+          const line = advance().line; // 'if'
+          const test = parseCondition('if', line);
+          const body = parseBlock('if', line);
+          const elifs = [];
+          let elseBody = null;
+
+          skipNewlines();
+          while (at('KEYWORD', 'elif')) {
+            const elifLine = advance().line;
+            const eTest = parseCondition('elif', elifLine);
+            const eBody = parseBlock('elif', elifLine);
+            elifs.push({ test: eTest, body: eBody, line: elifLine });
+            skipNewlines();
+          }
+
+          if (at('KEYWORD', 'else')) {
+            const elseLine = advance().line;
+            elseBody = parseBlock('else', elseLine);
+          }
+
+          return { type: 'IfStmt', test, body, elifs, elseBody, line };
+        }
+
+        function parseWhile() {
+          const line = advance().line; // 'while'
+          const test = parseCondition('while', line);
+          const body = parseBlock('while', line);
+          return { type: 'WhileStmt', test, body, line };
+        }
+
+        function parseFor() {
+          const line = advance().line; // 'for'
+          const targets = [];
+          const first = expect('IDENT', null, {
+            title: 'Помилка у циклі for (SyntaxError)',
+            line,
+            what: 'Після слова «for» має бути назва змінної циклу (наприклад, i).',
+            fix: 'Напиши: for i in range(5):'
+          });
+          targets.push(first.value);
+          while (at('OP', ',')) {
+            advance();
+            const nxt = expect('IDENT', null, {
+              title: 'Помилка у циклі for (SyntaxError)',
+              line,
+              what: 'Очікується назва змінної після коми у циклі for.',
+              fix: 'Перевір список змінних після слова for.'
+            });
+            targets.push(nxt.value);
+          }
+          expect('KEYWORD', 'in', {
+            title: 'Пропущено слово «in» (SyntaxError)',
+            line,
+            what: 'У циклі for після змінної обов’язково має стояти слово «in».',
+            fix: 'Напиши: for i in range(5):'
+          });
+          const iter = parseExpr();
+          const body = parseBlock('for', line);
+          return { type: 'ForStmt', targets, iter, body, line };
+        }
+
+        function parseDef() {
+          const line = advance().line; // 'def'
+          const nameTok = expect('IDENT', null, {
+            title: 'Неправильне оголошення функції (SyntaxError)',
+            line,
+            what: 'Після «def» потрібно вказати назву функції.',
+            fix: 'Наприклад: def my_func():'
+          });
+          expect('OP', '(', {
+            title: 'Пропущено дужки «()» у функції (SyntaxError)',
+            line,
+            what: `Після назви функції «${nameTok.value}» обов’язково мають іти круглі дужки ().`,
+            fix: `Напиши: def ${nameTok.value}():`
+          });
+          const params = [];
+          while (!at('OP', ')')) {
+            const p = expect('IDENT', null, {
+              title: 'Помилка в параметрах функції (SyntaxError)',
+              line,
+              what: 'У дужках після def мають бути назви параметрів через кому.',
+              fix: 'Наприклад: def suma(a, b):'
+            });
+            let defaultVal = null;
+            if (at('OP', '=')) {
+              advance();
+              defaultVal = parseExpr();
+            }
+            params.push({ name: p.value, defaultVal });
+            if (at('OP', ',')) advance();
+            else break;
+          }
+          expect('OP', ')', {
+            title: 'Незакрита дужка у функції (SyntaxError)',
+            line,
+            what: 'Забули закрити круглу дужку «)» у списку параметрів функції.',
+            fix: 'Додай «)» перед двокрапкою «:».'
+          });
+          const body = parseBlock('def', line);
+          return { type: 'DefStmt', name: nameTok.value, params, body, line };
+        }
+
+        function parseSimpleStatement() {
+          const t = peek();
+          if (t.type === 'KEYWORD') {
+            if (t.value === 'import') return parseImport();
+            if (t.value === 'from') return parseFromImport();
+            if (t.value === 'return') {
+              const line = advance().line;
+              if (at('NEWLINE') || at('OP', ';') || at('EOF') || at('DEDENT')) {
+                return { type: 'ReturnStmt', value: null, line };
+              }
+              return { type: 'ReturnStmt', value: parseExpr(), line };
+            }
+            if (t.value === 'break') {
+              return { type: 'BreakStmt', line: advance().line };
+            }
+            if (t.value === 'continue') {
+              return { type: 'ContinueStmt', line: advance().line };
+            }
+            if (t.value === 'pass') {
+              return { type: 'PassStmt', line: advance().line };
+            }
+            if (t.value === 'global') {
+              const line = advance().line;
+              const names = [];
+              const first = expect('IDENT', null, {
+                title: 'Помилка у global (SyntaxError)',
+                line,
+                what: 'Після слова «global» треба вказати назву змінної.',
+                fix: 'Наприклад: global score'
+              });
+              names.push(first.value);
+              while (at('OP', ',')) {
+                advance();
+                names.push(expect('IDENT', null, {
+                  title: 'Помилка у global (SyntaxError)',
+                  line,
+                  what: 'Очікується назва змінної після коми.',
+                  fix: 'Перевір перелік змінних після global.'
+                }).value);
+              }
+              return { type: 'GlobalStmt', names, line };
+            }
+            if (t.value === 'else' || t.value === 'elif') {
+              throw new PyTutorError({
+                title: `Несподіване «${t.value}» (SyntaxError)`,
+                line: t.line,
+                what: `Блок «${t.value}» не може бути сам по собі або має неправильний відступ.`,
+                fix: `Переконайся, що перед «${t.value}» є відповідний «if» на тому ж рівні відступу.`
+              });
+            }
+          }
+
+          // Expression or Assignment (including tuple unpacking a, b = ...)
+          const expr = parseTupleOrExpr();
+          const nxt = peek();
+          if (nxt.type === 'OP' && ['=', '+=', '-=', '*=', '/=', '//=', '%=', '**='].includes(nxt.value)) {
+            const op = advance().value;
+            const rhs = parseTupleOrExpr();
+            return { type: 'AssignStmt', target: expr, op, value: rhs, line: t.line };
+          }
+          return { type: 'ExprStmt', expr, line: t.line };
+        }
+
+        function parseImport() {
+          const line = advance().line; // 'import'
+          const mods = [];
+          while (true) {
+            const mod = expect('IDENT', null, {
+              title: 'Помилка імпорту (SyntaxError)',
+              line,
+              what: 'Після слова «import» має бути назва модуля (наприклад, turtle).',
+              fix: 'Напиши: import turtle'
+            });
+            let alias = mod.value;
+            if (at('KEYWORD', 'as')) {
+              advance();
+              alias = expect('IDENT', null, {
+                title: 'Помилка імпорту (SyntaxError)',
+                line,
+                what: 'Після «as» потрібно написати коротке ім’я (наприклад, t).',
+                fix: 'Напиши: import turtle as t'
+              }).value;
+            }
+            mods.push({ name: mod.value, alias });
+            if (at('OP', ',')) advance();
+            else break;
+          }
+          return { type: 'ImportStmt', mods, line };
+        }
+
+        function parseFromImport() {
+          const line = advance().line; // 'from'
+          const mod = expect('IDENT', null, {
+            title: 'Помилка імпорту (SyntaxError)',
+            line,
+            what: 'Після «from» потрібно вказати назву модуля (наприклад, turtle).',
+            fix: 'Напиши: from turtle import *'
+          });
+          expect('KEYWORD', 'import', {
+            title: 'Пропущено «import» (SyntaxError)',
+            line,
+            what: `У конструкції «from ${mod.value} ...» не вистачає слова «import».`,
+            fix: `Напиши: from ${mod.value} import *`
+          });
+          if (at('OP', '*')) {
+            advance();
+            return { type: 'FromImportStmt', module: mod.value, names: ['*'], line };
+          }
+          const names = [];
+          while (true) {
+            const n = expect('IDENT', null, {
+              title: 'Помилка імпорту (SyntaxError)',
+              line,
+              what: 'Вкажи назву команди або «*» після слова import.',
+              fix: `Напиши: from ${mod.value} import *`
+            });
+            let alias = n.value;
+            if (at('KEYWORD', 'as')) {
+              advance();
+              alias = expect('IDENT', null, {
+                title: 'Помилка імпорту (SyntaxError)',
+                line,
+                what: 'Вкажи псевдонім після слова as.',
+                fix: 'Перевір рядок import.'
+              }).value;
+            }
+            names.push({ name: n.value, alias });
+            if (at('OP', ',')) advance();
+            else break;
+          }
+          return { type: 'FromImportStmt', module: mod.value, names, line };
+        }
+
+        function parseTupleOrExpr() {
+          const first = parseExpr();
+          if (at('OP', ',')) {
+            const items = [first];
+            while (at('OP', ',')) {
+              advance();
+              if (at('OP', '=') || at('NEWLINE') || at('EOF') || at('OP', ';')) break;
+              items.push(parseExpr());
+            }
+            return { type: 'TupleExpr', items, line: first.line };
+          }
+          return first;
+        }
+
+        function parseExpr() {
+          return parseOr();
+        }
+
+        function parseOr() {
+          let left = parseAnd();
+          while (at('KEYWORD', 'or')) {
+            const line = advance().line;
+            const right = parseAnd();
+            left = { type: 'BoolOp', op: 'or', left, right, line };
+          }
+          return left;
+        }
+
+        function parseAnd() {
+          let left = parseNot();
+          while (at('KEYWORD', 'and')) {
+            const line = advance().line;
+            const right = parseNot();
+            left = { type: 'BoolOp', op: 'and', left, right, line };
+          }
+          return left;
+        }
+
+        function parseNot() {
+          if (at('KEYWORD', 'not')) {
+            const line = advance().line;
+            return { type: 'UnaryOp', op: 'not', arg: parseNot(), line };
+          }
+          return parseComparison();
+        }
+
+        function parseComparison() {
+          const left = parseAddSub();
+          const ops = [];
+          const comparators = [];
+
+          while (true) {
+            const t = peek();
+            if (t.type === 'OP' && ['==', '!=', '<', '<=', '>', '>='].includes(t.value)) {
+              ops.push(advance().value);
+              comparators.push(parseAddSub());
+            } else if (t.type === 'KEYWORD' && t.value === 'in') {
+              advance();
+              ops.push('in');
+              comparators.push(parseAddSub());
+            } else if (t.type === 'KEYWORD' && t.value === 'not' && peek(1).type === 'KEYWORD' && peek(1).value === 'in') {
+              advance(); advance();
+              ops.push('not in');
+              comparators.push(parseAddSub());
+            } else if (t.type === 'KEYWORD' && t.value === 'is') {
+              advance();
+              if (at('KEYWORD', 'not')) {
+                advance();
+                ops.push('is not');
+              } else {
+                ops.push('is');
+              }
+              comparators.push(parseAddSub());
+            } else {
+              break;
+            }
+          }
+
+          if (ops.length === 0) return left;
+          return { type: 'Compare', left, ops, comparators, line: left.line };
+        }
+
+        function parseAddSub() {
+          let left = parseMulDiv();
+          while (at('OP', '+') || at('OP', '-')) {
+            const op = advance();
+            const right = parseMulDiv();
+            left = { type: 'BinOp', op: op.value, left, right, line: op.line };
+          }
+          return left;
+        }
+
+        function parseMulDiv() {
+          let left = parseUnary();
+          while (at('OP', '*') || at('OP', '/') || at('OP', '//') || at('OP', '%')) {
+            const op = advance();
+            const right = parseUnary();
+            left = { type: 'BinOp', op: op.value, left, right, line: op.line };
+          }
+          return left;
+        }
+
+        function parseUnary() {
+          if (at('OP', '+') || at('OP', '-')) {
+            const op = advance();
+            return { type: 'UnaryOp', op: op.value, arg: parseUnary(), line: op.line };
+          }
+          return parsePower();
+        }
+
+        function parsePower() {
+          const left = parsePostfix();
+          if (at('OP', '**')) {
+            const op = advance();
+            const right = parseUnary();
+            return { type: 'BinOp', op: '**', left, right, line: op.line };
+          }
+          return left;
+        }
+
+        function parsePostfix() {
+          let expr = parsePrimary();
+          while (true) {
+            if (at('OP', '(')) {
+              const callLine = advance().line;
+              const args = [];
+              const kwargs = {};
+              while (!at('OP', ')')) {
+                if (peek().type === 'IDENT' && peek(1).type === 'OP' && peek(1).value === '=') {
+                  const kw = advance().value;
+                  advance(); // '='
+                  kwargs[kw] = parseExpr();
+                } else {
+                  args.push(parseExpr());
+                }
+                if (at('OP', ',')) advance();
+                else break;
+              }
+              expect('OP', ')', {
+                title: 'Незакрита дужка виклику (SyntaxError)',
+                line: callLine,
+                what: 'Забули закрити дужку «)» або поставити кому між аргументами.',
+                fix: 'Перевір дужки та коми у виклику функції.'
+              });
+              expr = { type: 'Call', callee: expr, args, kwargs, line: callLine };
+            } else if (at('OP', '.')) {
+              const dotLine = advance().line;
+              const prop = expect('IDENT', null, {
+                title: 'Помилка після крапки (SyntaxError)',
+                line: dotLine,
+                what: 'Після крапки «.» має йти назва методу або властивості (наприклад, turtle.forward).',
+                fix: 'Допиши команду після крапки.'
+              });
+              expr = { type: 'Attr', obj: expr, name: prop.value, line: dotLine };
+            } else if (at('OP', '[')) {
+              const brLine = advance().line;
+              let start = null, end = null, isSlice = false;
+              if (!at('OP', ':')) start = parseExpr();
+              if (at('OP', ':')) {
+                isSlice = true;
+                advance();
+                if (!at('OP', ']')) end = parseExpr();
+              }
+              expect('OP', ']', {
+                title: 'Незакрита квадратна дужка (SyntaxError)',
+                line: brLine,
+                what: 'Забули закрити квадратну дужку «]».',
+                fix: 'Додай «]» після індексу.'
+              });
+              expr = isSlice
+                ? { type: 'Slice', obj: expr, start, end, line: brLine }
+                : { type: 'Index', obj: expr, index: start, line: brLine };
+            } else {
+              break;
+            }
+          }
+          return expr;
+        }
+
+        function parsePrimary() {
+          const t = peek();
+          if (t.type === 'NUMBER') {
+            advance();
+            return { type: 'Literal', value: t.value, line: t.line };
+          }
+          if (t.type === 'STRING') {
+            advance();
+            return { type: 'Literal', value: t.value, line: t.line };
+          }
+          if (t.type === 'FSTRING') {
+            advance();
+            return { type: 'FString', template: t.value, line: t.line };
+          }
+          if (t.type === 'KEYWORD') {
+            if (t.value === 'True') { advance(); return { type: 'Literal', value: true, line: t.line }; }
+            if (t.value === 'False') { advance(); return { type: 'Literal', value: false, line: t.line }; }
+            if (t.value === 'None') { advance(); return { type: 'Literal', value: null, line: t.line }; }
+          }
+          if (t.type === 'IDENT') {
+            advance();
+            return { type: 'Ident', name: t.value, line: t.line };
+          }
+          if (t.type === 'OP' && t.value === '(') {
+            const line = advance().line;
+            if (at('OP', ')')) {
+              advance();
+              return { type: 'TupleExpr', items: [], line };
+            }
+            const inner = parseTupleOrExpr();
+            expect('OP', ')', {
+              title: 'Незакрита дужка (SyntaxError)',
+              line,
+              what: 'Відкрито дужку «(», але забули закрити її «)».',
+              fix: 'Додай «)» наприкінці виразу.'
+            });
+            return inner;
+          }
+          if (t.type === 'OP' && t.value === '[') {
+            const line = advance().line;
+            const items = [];
+            while (!at('OP', ']')) {
+              items.push(parseExpr());
+              if (at('OP', ',')) advance();
+              else break;
+            }
+            expect('OP', ']', {
+              title: 'Незакритий список (SyntaxError)',
+              line,
+              what: 'Відкрито список «[», але забули закрити «]».',
+              fix: 'Додай «]» наприкінці списку.'
+            });
+            return { type: 'ListExpr', items, line };
+          }
+
+          throw new PyTutorError({
+            title: 'Несподіваний фрагмент коду (SyntaxError)',
+            line: t.line,
+            what: t.type === 'NEWLINE' || t.type === 'EOF'
+              ? 'Вираз не завершено — очікувалося значення, змінна або число.'
+              : `Не вдалося прочитати «${t.value}» у цьому місці.`,
+            fix: 'Перевір, чи немає порожніх дужок або незавершеної арифметичної дії (+, -, *, /).'
+          });
+        }
+
+        return parseProgram();
+      }
+
+      /* ============================================================
+         PYTHON SUBSET INTERPRETER
+         ============================================================ */
+      class BreakSignal {}
+      class ContinueSignal {}
+      class ReturnSignal { constructor(value) { this.value = value; } }
+
+      function isTruthy(val) {
+        if (val === null || val === undefined || val === false) return false;
+        if (typeof val === 'number') return val !== 0;
+        if (typeof val === 'string') return val.length > 0;
+        if (Array.isArray(val)) return val.length > 0;
+        return true;
+      }
+
+      function pyStr(val) {
+        if (val === null || val === undefined) return 'None';
+        if (val === true) return 'True';
+        if (val === false) return 'False';
+        if (typeof val === 'number') return Object.is(val, -0) ? '0' : String(val);
+        if (typeof val === 'string') return val;
+        if (Array.isArray(val)) {
+          const inner = val.map((x) => typeof x === 'string' ? `'${x}'` : pyStr(x)).join(', ');
+          return val.__isTuple ? `(${inner}${val.length === 1 ? ',' : ''})` : `[${inner}]`;
+        }
+        if (typeof val === 'object' && val.__pyType === 'function') return `<function ${val.name}>`;
+        return String(val);
+      }
+
+      function pyEquals(a, b) {
+        if (a === b) return true;
+        if (typeof a === 'boolean' && typeof b === 'number') return (a ? 1 : 0) === b;
+        if (typeof a === 'number' && typeof b === 'boolean') return a === (b ? 1 : 0);
+        if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) {
+          return a.every((v, idx) => pyEquals(v, b[idx]));
+        }
+        return false;
+      }
+
+      function toColorString(args, line) {
+        if (args.length === 1 && typeof args[0] === 'string') return args[0];
+        if (args.length === 3 && args.every((n) => typeof n === 'number')) {
+          const clamp = (v) => Math.max(0, Math.min(255, Math.round(v <= 1 ? v * 255 : v)));
+          return `rgb(${clamp(args[0])}, ${clamp(args[1])}, ${clamp(args[2])})`;
+        }
+        throw new PyTutorError({
+          title: 'Неправильний колір (ValueError)',
+          line,
+          what: 'Колір потрібно вказати як текст у лапках, наприклад "red" або "blue".',
+          fix: 'Напиши назву кольору в лапках, наприклад: color("green").'
+        });
+      }
+
+      function buildTurtleAPI(host) {
+        const num = (v, cmd, line) => {
+          if (typeof v !== 'number' || Number.isNaN(v)) {
+            throw new PyTutorError({
+              title: 'Помилка аргументу turtle (TypeError)',
+              line,
+              what: `Команда ${cmd}() очікує число, а отримала «${pyStr(v)}».`,
+              fix: `Передай у ${cmd}() число, наприклад: ${cmd}(100).`
+            });
+          }
+          return v;
+        };
+
+        const api = {
+          __pyModule: 'turtle',
+          forward: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.forward(num(args[0], 'forward', line));
+            await turtleEngine.stepDelay();
+            return null;
+          },
+          fd: async (args, kw, line) => api.forward(args, kw, line),
+          backward: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.forward(-num(args[0], 'backward', line));
+            await turtleEngine.stepDelay();
+            return null;
+          },
+          bk: async (args, kw, line) => api.backward(args, kw, line),
+          back: async (args, kw, line) => api.backward(args, kw, line),
+          left: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.left(num(args[0], 'left', line));
+            await turtleEngine.stepDelay();
+            return null;
+          },
+          lt: async (args, kw, line) => api.left(args, kw, line),
+          right: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.right(num(args[0], 'right', line));
+            await turtleEngine.stepDelay();
+            return null;
+          },
+          rt: async (args, kw, line) => api.right(args, kw, line),
+          goto: async (args, kw, line) => {
+            host.showTurtle();
+            let x = args[0], y = args[1];
+            if (Array.isArray(x) && x.length >= 2) { y = x[1]; x = x[0]; }
+            turtleEngine.moveTo(num(x, 'goto', line), num(y, 'goto', line));
+            await turtleEngine.stepDelay();
+            return null;
+          },
+          setpos: async (args, kw, line) => api.goto(args, kw, line),
+          setposition: async (args, kw, line) => api.goto(args, kw, line),
+          setx: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.moveTo(num(args[0], 'setx', line), turtleEngine.y);
+            await turtleEngine.stepDelay();
+            return null;
+          },
+          sety: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.moveTo(turtleEngine.x, num(args[0], 'sety', line));
+            await turtleEngine.stepDelay();
+            return null;
+          },
+          home: async () => {
+            host.showTurtle();
+            turtleEngine.moveTo(0, 0);
+            turtleEngine.setHeading(0);
+            await turtleEngine.stepDelay();
+            return null;
+          },
+          setheading: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.setHeading(num(args[0], 'setheading', line));
+            return null;
+          },
+          seth: async (args, kw, line) => api.setheading(args, kw, line),
+          penup: async () => { host.showTurtle(); turtleEngine.penDown = false; return null; },
+          pu: async () => api.penup(),
+          up: async () => api.penup(),
+          pendown: async () => { host.showTurtle(); turtleEngine.penDown = true; return null; },
+          pd: async () => api.pendown(),
+          down: async () => api.pendown(),
+          width: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.lineWidth = Math.max(0.5, num(args[0], 'width', line));
+            return null;
+          },
+          pensize: async (args, kw, line) => api.width(args, kw, line),
+          color: async (args, kw, line) => {
+            host.showTurtle();
+            if (args.length === 2 && typeof args[0] === 'string' && typeof args[1] === 'string') {
+              turtleEngine.penColor = args[0];
+              turtleEngine.fillColor = args[1];
+            } else {
+              const c = toColorString(args, line);
+              turtleEngine.penColor = c;
+              turtleEngine.fillColor = c;
+            }
+            turtleEngine.render();
+            return null;
+          },
+          pencolor: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.penColor = toColorString(args, line);
+            turtleEngine.render();
+            return null;
+          },
+          fillcolor: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.fillColor = toColorString(args, line);
+            turtleEngine.render();
+            return null;
+          },
+          bgcolor: async (args, kw, line) => {
+            host.showTurtle();
+            turtleEngine.bgColor = toColorString(args, line);
+            turtleEngine.render();
+            return null;
+          },
+          shape: async (args, kw, line) => {
+            host.showTurtle();
+            const s = String(args[0] || '').toLowerCase();
+            const valid = ['turtle', 'arrow', 'classic', 'circle', 'square', 'triangle'];
+            if (!valid.includes(s)) {
+              throw new PyTutorError({
+                title: 'Невідома форма черепашки (TurtleGraphicsError)',
+                line,
+                what: `Форма «${s}» не підтримується.`,
+                fix: 'Використай одну з форм: "turtle", "arrow", "classic", "circle", "square" або "triangle".'
+              });
+            }
+            turtleEngine.shape = s;
+            turtleEngine.render();
+            return null;
+          },
+          begin_fill: async () => { host.showTurtle(); turtleEngine.beginFill(); return null; },
+          end_fill: async () => { host.showTurtle(); turtleEngine.endFill(); return null; },
+          circle: async (args, kw, line) => {
+            host.showTurtle();
+            const r = num(args[0], 'circle', line);
+            const ext = args[1] !== undefined ? num(args[1], 'circle', line) : 360;
+            const st = args[2] !== undefined ? num(args[2], 'circle', line) : null;
+            turtleEngine.circle(r, ext, st);
+            await turtleEngine.stepDelay();
+            return null;
+          },
+          dot: async (args, kw, line) => {
+            host.showTurtle();
+            const sz = args[0] !== undefined ? num(args[0], 'dot', line) : null;
+            const col = args[1] !== undefined ? String(args[1]) : null;
+            turtleEngine.dot(sz, col);
+            return null;
+          },
+          hideturtle: async () => { host.showTurtle(); turtleEngine.visible = false; turtleEngine.render(); return null; },
+          ht: async () => api.hideturtle(),
+          showturtle: async () => { host.showTurtle(); turtleEngine.visible = true; turtleEngine.render(); return null; },
+          st: async () => api.showturtle(),
+          speed: async (args, kw, line) => {
+            host.showTurtle();
+            const s = args[0];
+            if (typeof s === 'string') {
+              const map = { fastest: 0, fast: 10, normal: 6, slow: 3, slowest: 1 };
+              turtleEngine.speed = map[s] ?? 6;
+            } else {
+              turtleEngine.speed = Math.max(0, Math.min(10, num(s, 'speed', line)));
+            }
+            return null;
+          },
+          clear: async () => { host.showTurtle(); turtleEngine.clearDrawing(); return null; },
+          reset: async () => { host.showTurtle(); turtleEngine.reset(); return null; },
+          done: async () => null,
+          mainloop: async () => null,
+          exitonclick: async () => null,
+          xcor: async () => turtleEngine.x,
+          ycor: async () => turtleEngine.y,
+          heading: async () => ((turtleEngine.angle % 360) + 360) % 360,
+          position: async () => { const t = [turtleEngine.x, turtleEngine.y]; t.__isTuple = true; return t; },
+          pos: async () => api.position(),
+          Turtle: async () => { host.showTurtle(); return api; },
+          Screen: async () => { host.showTurtle(); return api; }
+        };
+        return api;
+      }
+
+      function buildBuiltins(host) {
+        return {
+          print: async (args, kw) => {
+            const sep = kw.sep !== undefined ? pyStr(kw.sep) : ' ';
+            const end = kw.end !== undefined ? pyStr(kw.end) : '\n';
+            host.writeOut(args.map(pyStr).join(sep) + end);
+            return null;
+          },
+          input: async (args) => {
+            const prompt = args.length > 0 ? pyStr(args[0]) : '';
+            return await host.readInput(prompt);
+          },
+          int: async (args, kw, line) => {
+            if (args.length === 0) return 0;
+            const v = args[0];
+            if (typeof v === 'number') return Math.trunc(v);
+            if (typeof v === 'boolean') return v ? 1 : 0;
+            if (typeof v === 'string') {
+              const trimmed = v.trim();
+              if (!/^[+-]?\d+$/.test(trimmed)) {
+                throw new PyTutorError({
+                  title: 'Помилка перетворення в int() (ValueError)',
+                  line,
+                  what: `Неможливо перетворити «${v}» у ціле число за допомогою int().`,
+                  fix: 'Переконайся, що вводиш лише цифри без літер, пробілів усередині та крапок (для дробових чисел використовуй float()).'
+                });
+              }
+              return parseInt(trimmed, 10);
+            }
+            throw new PyTutorError({
+              title: 'Помилка типу в int() (TypeError)',
+              line,
+              what: `Функція int() не може перетворити значення «${pyStr(v)}».`,
+              fix: 'Передай в int() рядок із цифр або число.'
+            });
+          },
+          float: async (args, kw, line) => {
+            if (args.length === 0) return 0.0;
+            const v = args[0];
+            if (typeof v === 'number') return v;
+            if (typeof v === 'boolean') return v ? 1.0 : 0.0;
+            if (typeof v === 'string') {
+              const trimmed = v.trim().replace(',', '.');
+              if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(trimmed)) {
+                throw new PyTutorError({
+                  title: 'Помилка перетворення у float() (ValueError)',
+                  line,
+                  what: `Неможливо перетворити «${v}» у дробове число за допомогою float().`,
+                  fix: 'Введи коректне число, наприклад: 3.5 або -12.'
+                });
+              }
+              return parseFloat(trimmed);
+            }
+            throw new PyTutorError({
+              title: 'Помилка типу у float() (TypeError)',
+              line,
+              what: `Функція float() не може перетворити значення «${pyStr(v)}».`,
+              fix: 'Передай у float() число або рядок із цифрами.'
+            });
+          },
+          str: async (args) => (args.length === 0 ? '' : pyStr(args[0])),
+          bool: async (args) => (args.length === 0 ? false : isTruthy(args[0])),
+          abs: async (args, kw, line) => {
+            if (typeof args[0] !== 'number') {
+              throw new PyTutorError({
+                title: 'Помилка в abs() (TypeError)',
+                line,
+                what: 'Функція abs() приймає лише число.',
+                fix: 'Передай число, наприклад abs(-5).'
+              });
+            }
+            return Math.abs(args[0]);
+          },
+          round: async (args, kw, line) => {
+            if (typeof args[0] !== 'number') {
+              throw new PyTutorError({
+                title: 'Помилка в round() (TypeError)',
+                line,
+                what: 'Функція round() очікує число.',
+                fix: 'Наприклад: round(3.1415, 2).'
+              });
+            }
+            const digits = args[1] !== undefined ? Math.trunc(args[1]) : 0;
+            const factor = Math.pow(10, digits);
+            return Math.round(args[0] * factor) / factor;
+          },
+          pow: async (args) => Math.pow(args[0], args[1]),
+          len: async (args, kw, line) => {
+            const v = args[0];
+            if (typeof v === 'string' || Array.isArray(v)) return v.length;
+            throw new PyTutorError({
+              title: 'Помилка в len() (TypeError)',
+              line,
+              what: 'Функція len() визначає довжину рядка або списку, а не числа.',
+              fix: 'Передай у len() текст у лапках або список.'
+            });
+          },
+          min: async (args, kw, line) => {
+            const arr = args.length === 1 && Array.isArray(args[0]) ? args[0] : args;
+            if (arr.length === 0) throw new PyTutorError({ title: 'Помилка в min()', line, what: 'Потрібно передати хоча б одне число.', fix: 'Напиши, наприклад: min(3, 7, 1).' });
+            return Math.min(...arr);
+          },
+          max: async (args, kw, line) => {
+            const arr = args.length === 1 && Array.isArray(args[0]) ? args[0] : args;
+            if (arr.length === 0) throw new PyTutorError({ title: 'Помилка в max()', line, what: 'Потрібно передати хоча б одне число.', fix: 'Напиши, наприклад: max(3, 7, 1).' });
+            return Math.max(...arr);
+          },
+          sum: async (args, kw, line) => {
+            if (!Array.isArray(args[0])) throw new PyTutorError({ title: 'Помилка в sum()', line, what: 'Функція sum() приймає список або range().', fix: 'Напиши, наприклад: sum(range(1, 6)).' });
+            return args[0].reduce((a, b) => a + b, 0);
+          },
+          range: async (args, kw, line) => {
+            if (args.length < 1 || args.length > 3) {
+              throw new PyTutorError({
+                title: 'Помилка в range() (TypeError)',
+                line,
+                what: 'Функція range() приймає від 1 до 3 цілих чисел.',
+                fix: 'Приклади: range(5), range(1, 10) або range(0, 10, 2).'
+              });
+            }
+            for (const a of args) {
+              if (typeof a !== 'number' || !Number.isInteger(a)) {
+                throw new PyTutorError({
+                  title: 'Помилка аргументу в range() (TypeError)',
+                  line,
+                  what: `Функція range() працює лише з цілими числами, отримано «${pyStr(a)}».`,
+                  fix: 'Передай цілі числа (якщо число з input(), обгорни в int(input())).'
+                });
+              }
+            }
+            let start = 0, stop = 0, step = 1;
+            if (args.length === 1) {
+              stop = args[0];
+            } else if (args.length === 2) {
+              start = args[0]; stop = args[1];
+            } else {
+              start = args[0]; stop = args[1]; step = args[2];
+            }
+            if (step === 0) {
+              throw new PyTutorError({
+                title: 'Нульовий крок у range() (ValueError)',
+                line,
+                what: 'Третій аргумент range() (крок) не може дорівнювати 0.',
+                fix: 'Зміни крок на 1 або інше ненульове ціле число.'
+              });
+            }
+            const res = [];
+            if (step > 0) {
+              for (let x = start; x < stop && res.length < 50000; x += step) res.push(x);
+            } else {
+              for (let x = start; x > stop && res.length < 50000; x += step) res.push(x);
+            }
+            return res;
+          }
+        };
+      }
+
+      async function executeAst(ast, host, signal) {
+        const builtins = buildBuiltins(host);
+        const turtleMod = buildTurtleAPI(host);
+        const mathMod = {
+          __pyModule: 'math',
+          pi: Math.PI,
+          e: Math.E,
+          sqrt: async (args) => Math.sqrt(args[0]),
+          sin: async (args) => Math.sin(args[0]),
+          cos: async (args) => Math.cos(args[0]),
+          tan: async (args) => Math.tan(args[0]),
+          floor: async (args) => Math.floor(args[0]),
+          ceil: async (args) => Math.ceil(args[0]),
+          fabs: async (args) => Math.abs(args[0])
+        };
+        const randomMod = {
+          __pyModule: 'random',
+          randint: async (args) => {
+            const a = Math.trunc(args[0]), b = Math.trunc(args[1]);
+            return Math.floor(Math.random() * (b - a + 1)) + a;
+          },
+          random: async () => Math.random(),
+          choice: async (args) => args[0][Math.floor(Math.random() * args[0].length)]
+        };
+
+        const globalEnv = { vars: Object.create(null), globals: new Set(), parent: null };
+        let steps = 0;
+        const MAX_STEPS = 80000;
+
+        async function tick(line) {
+          if (signal.aborted) {
+            throw new PyTutorError({
+              title: 'Виконання зупинено',
+              line,
+              what: 'Програму було зупинено користувачем.',
+              fix: 'Натисни «Запустити», щоб почати знову.'
+            });
+          }
+          steps++;
+          if (steps > MAX_STEPS) {
+            throw new PyTutorError({
+              title: 'Занадто довге виконання (можливе зациклення)',
+              line,
+              what: 'Цикл виконується занадто довго (понад 80 000 кроків) — імовірно, утворився нескінченний цикл while.',
+              fix: 'Перевір умову циклу while та переконайся, що змінна в умові змінюється на кожному кроці (наприклад, i = i + 1).'
+            });
+          }
+          if (steps % 200 === 0) {
+            await new Promise((r) => setTimeout(r, 0));
+          }
+        }
+
+        function lookupVar(name, env, line) {
+          let cur = env;
+          while (cur) {
+            if (Object.prototype.hasOwnProperty.call(cur.vars, name)) {
+              return cur.vars[name];
+            }
+            cur = cur.parent;
+          }
+          if (Object.prototype.hasOwnProperty.call(builtins, name)) {
+            return { __pyBuiltin: name, fn: builtins[name] };
+          }
+          if (TURTLE_COMMANDS.has(name)) {
+            throw new PyTutorError({
+              title: 'Модуль turtle не підключено (NameError)',
+              line,
+              what: `Команда «${name}()» належить графіці Черепашки (turtle), але модуль ще не підключено у програмі.`,
+              fix: `Додай на самому початку коду рядок:\nfrom turtle import *\nабо import turtle (і пиши turtle.${name}(...)).`
+            });
+          }
+          const allKnown = [
+            ...Object.keys(env.vars),
+            ...Object.keys(globalEnv.vars),
+            ...Object.keys(builtins)
+          ];
+          const suggestion = findClosestName(name, allKnown);
+          throw new PyTutorError({
+            title: `Невідома змінна або функція «${name}» (NameError)`,
+            line,
+            what: `Програма не знає, що таке «${name}», бо змінну або функцію ще не створено до цього рядка.`,
+            fix: suggestion
+              ? `Можливо, ти зробив описку і мав на увазі «${suggestion}»? Або задай змінну вище, наприклад: ${name} = 0.`
+              : `Перевір правопис назви «${name}» або задай їй значення перед використанням (наприклад: ${name} = 0).`
+          });
+        }
+
+        function assignVar(name, val, env) {
+          if (env !== globalEnv && env.globals.has(name)) {
+            globalEnv.vars[name] = val;
+          } else {
+            env.vars[name] = val;
+          }
+        }
+
+        async function execBlock(stmts, env) {
+          for (const s of stmts) {
+            await execStmt(s, env);
+          }
+        }
+
+        async function execStmt(stmt, env) {
+          await tick(stmt.line);
+          switch (stmt.type) {
+            case 'PassStmt':
+              return;
+            case 'BreakStmt':
+              throw new BreakSignal();
+            case 'ContinueStmt':
+              throw new ContinueSignal();
+            case 'ReturnStmt': {
+              const val = stmt.value ? await evalExpr(stmt.value, env) : null;
+              throw new ReturnSignal(val);
+            }
+            case 'GlobalStmt': {
+              for (const n of stmt.names) env.globals.add(n);
+              return;
+            }
+            case 'ImportStmt': {
+              for (const m of stmt.mods) {
+                if (m.name === 'turtle') {
+                  host.showTurtle();
+                  assignVar(m.alias, turtleMod, env);
+                } else if (m.name === 'math') {
+                  assignVar(m.alias, mathMod, env);
+                } else if (m.name === 'random') {
+                  assignVar(m.alias, randomMod, env);
+                } else {
+                  throw new PyTutorError({
+                    title: `Модуль «${m.name}» не знайдено (ModuleNotFoundError)`,
+                    line: stmt.line,
+                    what: `У цьому тренажері немає модуля «${m.name}». Доступні модулі: turtle, math, random.`,
+                    fix: 'Якщо хочеш малювати Черепашкою, перевір слово: import turtle.'
+                  });
+                }
+              }
+              return;
+            }
+            case 'FromImportStmt': {
+              if (stmt.module === 'turtle') {
+                host.showTurtle();
+                if (stmt.names[0] === '*') {
+                  for (const [k, v] of Object.entries(turtleMod)) {
+                    if (!k.startsWith('__')) assignVar(k, { __pyBuiltin: k, fn: v }, env);
+                  }
+                } else {
+                  for (const item of stmt.names) {
+                    if (!turtleMod[item.name]) {
+                      throw new PyTutorError({
+                        title: `Команди «${item.name}» немає в turtle`,
+                        line: stmt.line,
+                        what: `У модулі turtle не знайдено команду «${item.name}».`,
+                        fix: 'Використай from turtle import *, щоб підключити всі команди черепашки.'
+                      });
+                    }
+                    assignVar(item.alias, { __pyBuiltin: item.name, fn: turtleMod[item.name] }, env);
+                  }
+                }
+              } else if (stmt.module === 'math' || stmt.module === 'random') {
+                const mod = stmt.module === 'math' ? mathMod : randomMod;
+                if (stmt.names[0] === '*') {
+                  for (const [k, v] of Object.entries(mod)) {
+                    if (!k.startsWith('__')) {
+                      assignVar(k, typeof v === 'function' ? { __pyBuiltin: k, fn: v } : v, env);
+                    }
+                  }
+                } else {
+                  for (const item of stmt.names) {
+                    const v = mod[item.name];
+                    assignVar(item.alias, typeof v === 'function' ? { __pyBuiltin: item.name, fn: v } : v, env);
+                  }
+                }
+              } else {
+                throw new PyTutorError({
+                  title: `Модуль «${stmt.module}» не знайдено`,
+                  line: stmt.line,
+                  what: `Модуль «${stmt.module}» недоступний у цьому тренажері.`,
+                  fix: 'Перевір назву модуля (наприклад, from turtle import *).'
+                });
+              }
+              return;
+            }
+            case 'DefStmt': {
+              const fnObj = {
+                __pyType: 'function',
+                name: stmt.name,
+                params: stmt.params,
+                body: stmt.body,
+                closure: env
+              };
+              assignVar(stmt.name, fnObj, env);
+              return;
+            }
+            case 'IfStmt': {
+              if (isTruthy(await evalExpr(stmt.test, env))) {
+                await execBlock(stmt.body, env);
+                return;
+              }
+              for (const el of stmt.elifs) {
+                if (isTruthy(await evalExpr(el.test, env))) {
+                  await execBlock(el.body, env);
+                  return;
+                }
+              }
+              if (stmt.elseBody) {
+                await execBlock(stmt.elseBody, env);
+              }
+              return;
+            }
+            case 'WhileStmt': {
+              while (isTruthy(await evalExpr(stmt.test, env))) {
+                await tick(stmt.line);
+                try {
+                  await execBlock(stmt.body, env);
+                } catch (sig) {
+                  if (sig instanceof BreakSignal) break;
+                  if (sig instanceof ContinueSignal) continue;
+                  throw sig;
+                }
+              }
+              return;
+            }
+            case 'ForStmt': {
+              const iterable = await evalExpr(stmt.iter, env);
+              let items;
+              if (typeof iterable === 'string') items = [...iterable];
+              else if (Array.isArray(iterable)) items = iterable;
+              else {
+                throw new PyTutorError({
+                  title: 'Не можна перебирати в циклі for (TypeError)',
+                  line: stmt.line,
+                  what: `Цикл for може перебирати range(), список або текст, а не «${pyStr(iterable)}».`,
+                  fix: 'Використай range(...), наприклад: for i in range(5):'
+                });
+              }
+              for (const item of items) {
+                await tick(stmt.line);
+                if (stmt.targets.length === 1) {
+                  assignVar(stmt.targets[0], item, env);
+                } else if (Array.isArray(item) && item.length === stmt.targets.length) {
+                  stmt.targets.forEach((t, idx) => assignVar(t, item[idx], env));
+                }
+                try {
+                  await execBlock(stmt.body, env);
+                } catch (sig) {
+                  if (sig instanceof BreakSignal) break;
+                  if (sig instanceof ContinueSignal) continue;
+                  throw sig;
+                }
+              }
+              return;
+            }
+            case 'AssignStmt': {
+              const val = await evalExpr(stmt.value, env);
+              if (stmt.op === '=') {
+                await assignTarget(stmt.target, val, env, stmt.line);
+              } else {
+                const cur = await evalExpr(stmt.target, env);
+                const binOp = stmt.op.slice(0, -1);
+                const next = evalBinary(binOp, cur, val, stmt.line);
+                await assignTarget(stmt.target, next, env, stmt.line);
+              }
+              return;
+            }
+            case 'ExprStmt': {
+              await evalExpr(stmt.expr, env);
+              return;
+            }
+          }
+        }
+
+        async function assignTarget(target, val, env, line) {
+          if (target.type === 'Ident') {
+            assignVar(target.name, val, env);
+          } else if (target.type === 'TupleExpr') {
+            if (!Array.isArray(val) || val.length !== target.items.length) {
+              throw new PyTutorError({
+                title: 'Помилка розпакування значень (ValueError)',
+                line,
+                what: 'Кількість змінних зліва від «=» не збігається з кількістю значень справа.',
+                fix: 'Наприклад: a, b = 1, 2 (однакова кількість змінних і значень).'
+              });
+            }
+            for (let i = 0; i < target.items.length; i++) {
+              await assignTarget(target.items[i], val[i], env, line);
+            }
+          } else if (target.type === 'Index') {
+            const obj = await evalExpr(target.obj, env);
+            const idx = await evalExpr(target.index, env);
+            if (!Array.isArray(obj)) {
+              throw new PyTutorError({
+                title: 'Не можна змінити елемент за індексом (TypeError)',
+                line,
+                what: 'Змінювати елементи за індексом [...] можна лише у списках.',
+                fix: 'Перевір, чи це список.'
+              });
+            }
+            const realIdx = idx < 0 ? obj.length + idx : idx;
+            if (realIdx < 0 || realIdx >= obj.length) {
+              throw new PyTutorError({
+                title: 'Індекс за межами списку (IndexError)',
+                line,
+                what: `У списку лише ${obj.length} елементів, а звернення до індексу ${idx}.`,
+                fix: 'Пам’ятай, що нумерація в Python починається з 0.'
+              });
+            }
+            obj[realIdx] = val;
+          } else {
+            throw new PyTutorError({
+              title: 'Не можна присвоїти значення (SyntaxError)',
+              line,
+              what: 'Ліворуч від знака «=» має бути назва змінної, а не число чи вираз.',
+              fix: 'Постав назву змінної ліворуч від «=», наприклад: x = 10.'
+            });
+          }
+        }
+
+        function evalBinary(op, a, b, line) {
+          if (op === '+') {
+            if (typeof a === 'number' && typeof b === 'number') return a + b;
+            if (typeof a === 'string' && typeof b === 'string') return a + b;
+            if (Array.isArray(a) && Array.isArray(b)) return [...a, ...b];
+            if ((typeof a === 'string' && typeof b === 'number') || (typeof a === 'number' && typeof b === 'string')) {
+              throw new PyTutorError({
+                title: 'Не можна додавати текст і число (TypeError)',
+                line,
+                what: `Ти намагаєшся додати «${pyStr(a)}» і «${pyStr(b)}» знаком «+». У Python текст і число так не з’єднуються.`,
+                fix: 'Перетвори число на текст через str(...), наприклад "Вік: " + str(13), або передай у print() через кому: print("Вік:", 13).'
+              });
+            }
+            throw new PyTutorError({
+              title: 'Несумісні типи для «+» (TypeError)',
+              line,
+              what: `Не можна застосувати «+» до ${pyStr(a)} та ${pyStr(b)}.`,
+              fix: 'Переконайся, що обидва значення є числами або обидва є рядками.'
+            });
+          }
+          if (op === '*') {
+            if (typeof a === 'number' && typeof b === 'number') return a * b;
+            if (typeof a === 'string' && typeof b === 'number') return a.repeat(Math.max(0, Math.trunc(b)));
+            if (typeof a === 'number' && typeof b === 'string') return b.repeat(Math.max(0, Math.trunc(a)));
+            if (Array.isArray(a) && typeof b === 'number') {
+              const out = [];
+              for (let i = 0; i < Math.trunc(b); i++) out.push(...a);
+              return out;
+            }
+          }
+          if (typeof a === 'boolean') a = a ? 1 : 0;
+          if (typeof b === 'boolean') b = b ? 1 : 0;
+          if (typeof a !== 'number' || typeof b !== 'number') {
+            throw new PyTutorError({
+              title: `Помилка операції «${op}» (TypeError)`,
+              line,
+              what: `Операція «${op}» працює з числами, а отримано «${pyStr(a)}» і «${pyStr(b)}».`,
+              fix: 'Якщо значення прийшло з input(), перетвори його у число: int(input()) або float(input()).'
+            });
+          }
+          if (op === '-') return a - b;
+          if (op === '**') return Math.pow(a, b);
+          if (op === '/' || op === '//' || op === '%') {
+            if (b === 0) {
+              throw new PyTutorError({
+                title: 'Ділення на нуль (ZeroDivisionError)',
+                line,
+                what: `Спроба виконати ділення «${op}» на 0. У математиці та Python ділити на нуль заборонено!`,
+                fix: 'Перевір дільник (число або змінну праворуч від знака ділення) — він не має дорівнювати 0.'
+              });
+            }
+            if (op === '/') return a / b;
+            if (op === '//') return Math.floor(a / b);
+            if (op === '%') return ((a % b) + b) % b;
+          }
+          return 0;
+        }
+
+        async function evalExpr(expr, env) {
+          switch (expr.type) {
+            case 'Literal':
+              return expr.value;
+            case 'FString': {
+              // Evaluate `{expr}` interpolations inside f-string
+              let result = '';
+              let i = 0;
+              const tpl = expr.template;
+              while (i < tpl.length) {
+                if (tpl[i] === '{') {
+                  if (tpl[i + 1] === '{') { result += '{'; i += 2; continue; }
+                  const closeIdx = tpl.indexOf('}', i + 1);
+                  if (closeIdx === -1) {
+                    throw new PyTutorError({
+                      title: 'Помилка у f-рядку (SyntaxError)',
+                      line: expr.line,
+                      what: 'В f-рядку відкрито фігурну дужку «{», але не закрито «}».',
+                      fix: 'Закрий дужку «}» після імені змінної або виразу.'
+                    });
+                  }
+                  const subCode = tpl.slice(i + 1, closeIdx);
+                  const subAst = parse(tokenize(subCode), [subCode]);
+                  if (subAst.body.length > 0 && subAst.body[0].expr) {
+                    result += pyStr(await evalExpr(subAst.body[0].expr, env));
+                  }
+                  i = closeIdx + 1;
+                } else if (tpl[i] === '}' && tpl[i + 1] === '}') {
+                  result += '}';
+                  i += 2;
+                } else {
+                  result += tpl[i];
+                  i++;
+                }
+              }
+              return result;
+            }
+            case 'Ident':
+              return lookupVar(expr.name, env, expr.line);
+            case 'ListExpr': {
+              const arr = [];
+              for (const it of expr.items) arr.push(await evalExpr(it, env));
+              return arr;
+            }
+            case 'TupleExpr': {
+              const arr = [];
+              for (const it of expr.items) arr.push(await evalExpr(it, env));
+              arr.__isTuple = true;
+              return arr;
+            }
+            case 'UnaryOp': {
+              const v = await evalExpr(expr.arg, env);
+              if (expr.op === 'not') return !isTruthy(v);
+              if (typeof v !== 'number') {
+                throw new PyTutorError({
+                  title: 'Помилка знака перед значенням (TypeError)',
+                  line: expr.line,
+                  what: `Знак «${expr.op}» можна ставити лише перед числом.`,
+                  fix: 'Перевір тип змінної.'
+                });
+              }
+              return expr.op === '-' ? -v : +v;
+            }
+            case 'BinOp': {
+              const l = await evalExpr(expr.left, env);
+              const r = await evalExpr(expr.right, env);
+              return evalBinary(expr.op, l, r, expr.line);
+            }
+            case 'BoolOp': {
+              const l = await evalExpr(expr.left, env);
+              if (expr.op === 'and') return isTruthy(l) ? await evalExpr(expr.right, env) : l;
+              return isTruthy(l) ? l : await evalExpr(expr.right, env);
+            }
+            case 'Compare': {
+              let cur = await evalExpr(expr.left, env);
+              for (let i = 0; i < expr.ops.length; i++) {
+                const op = expr.ops[i];
+                const nxt = await evalExpr(expr.comparators[i], env);
+                let ok = false;
+                if (op === '==') ok = pyEquals(cur, nxt);
+                else if (op === '!=') ok = !pyEquals(cur, nxt);
+                else if (op === 'is') ok = cur === nxt;
+                else if (op === 'is not') ok = cur !== nxt;
+                else if (op === 'in' || op === 'not in') {
+                  let found = false;
+                  if (typeof nxt === 'string') found = nxt.includes(String(cur));
+                  else if (Array.isArray(nxt)) found = nxt.some((x) => pyEquals(x, cur));
+                  else {
+                    throw new PyTutorError({
+                      title: 'Помилка оператора «in» (TypeError)',
+                      line: expr.line,
+                      what: 'Праворуч від «in» має бути рядок або список.',
+                      fix: 'Наприклад: "а" in "школа" або 3 in [1, 2, 3].'
+                    });
+                  }
+                  ok = op === 'in' ? found : !found;
+                } else {
+                  if (typeof cur !== typeof nxt && !(typeof cur === 'number' && typeof nxt === 'number')) {
+                    throw new PyTutorError({
+                      title: 'Не можна порівняти різні типи (TypeError)',
+                      line: expr.line,
+                      what: `Ти порівнюєш «${pyStr(cur)}» і «${pyStr(nxt)}» знаком «${op}». Не можна порівнювати текст і число напряму!`,
+                      fix: 'Перетвори текст з input() у число: int(input()) або float(input()).'
+                    });
+                  }
+                  if (op === '<') ok = cur < nxt;
+                  else if (op === '<=') ok = cur <= nxt;
+                  else if (op === '>') ok = cur > nxt;
+                  else if (op === '>=') ok = cur >= nxt;
+                }
+                if (!ok) return false;
+                cur = nxt;
+              }
+              return true;
+            }
+            case 'Index': {
+              const obj = await evalExpr(expr.obj, env);
+              const idx = await evalExpr(expr.index, env);
+              if (typeof obj !== 'string' && !Array.isArray(obj)) {
+                throw new PyTutorError({
+                  title: 'Помилка індексації (TypeError)',
+                  line: expr.line,
+                  what: 'Брати елемент у квадратних дужках [...] можна лише з тексту або списку.',
+                  fix: 'Перевір тип змінної.'
+                });
+              }
+              const realIdx = idx < 0 ? obj.length + idx : idx;
+              if (realIdx < 0 || realIdx >= obj.length) {
+                throw new PyTutorError({
+                  title: 'Індекс виходить за межі (IndexError)',
+                  line: expr.line,
+                  what: `Довжина дорівнює ${obj.length}, тому елемента під номером ${idx} не існує.`,
+                  fix: 'Пам’ятай: перший елемент має індекс 0, а останній — довжина мінус 1.'
+                });
+              }
+              return obj[realIdx];
+            }
+            case 'Slice': {
+              const obj = await evalExpr(expr.obj, env);
+              const s = expr.start ? await evalExpr(expr.start, env) : undefined;
+              const e = expr.end ? await evalExpr(expr.end, env) : undefined;
+              return obj.slice(s, e);
+            }
+            case 'Attr': {
+              const obj = await evalExpr(expr.obj, env);
+              if (obj && obj.__pyModule) {
+                const member = obj[expr.name];
+                if (member === undefined) {
+                  const suggestion = findClosestName(expr.name, Object.keys(obj).filter((k) => !k.startsWith('__')));
+                  throw new PyTutorError({
+                    title: `Невідома команда «${expr.name}» у модулі ${obj.__pyModule}`,
+                    line: expr.line,
+                    what: `У модулі ${obj.__pyModule} немає команди «${expr.name}».`,
+                    fix: suggestion
+                      ? `Можливо, ти мав на увазі «${obj.__pyModule}.${suggestion}»?`
+                      : `Перевір написання назви команди після крапки.`
+                  });
+                }
+                if (typeof member === 'function') {
+                  return { __pyBuiltin: expr.name, fn: member };
+                }
+                return member;
+              }
+              if (Array.isArray(obj)) {
+                if (expr.name === 'append') {
+                  return { __pyBuiltin: 'append', fn: async (args) => { obj.push(args[0]); return null; } };
+                }
+                if (expr.name === 'pop') {
+                  return { __pyBuiltin: 'pop', fn: async () => obj.pop() ?? null };
+                }
+              }
+              if (typeof obj === 'string') {
+                if (expr.name === 'lower') return { __pyBuiltin: 'lower', fn: async () => obj.toLowerCase() };
+                if (expr.name === 'upper') return { __pyBuiltin: 'upper', fn: async () => obj.toUpperCase() };
+                if (expr.name === 'strip') return { __pyBuiltin: 'strip', fn: async () => obj.trim() };
+              }
+              throw new PyTutorError({
+                title: `Невідома властивість «${expr.name}» (AttributeError)`,
+                line: expr.line,
+                what: `У значення «${pyStr(obj)}» немає команди або властивості «${expr.name}».`,
+                fix: 'Перевір назву після крапки.'
+              });
+            }
+            case 'Call': {
+              const callee = await evalExpr(expr.callee, env);
+              const args = [];
+              for (const a of expr.args) args.push(await evalExpr(a, env));
+              const kw = {};
+              for (const [k, v] of Object.entries(expr.kwargs)) kw[k] = await evalExpr(v, env);
+
+              if (callee && callee.__pyBuiltin) {
+                return await callee.fn(args, kw, expr.line);
+              }
+              if (callee && callee.__pyType === 'function') {
+                const fnEnv = { vars: Object.create(null), globals: new Set(), parent: callee.closure };
+                for (let i = 0; i < callee.params.length; i++) {
+                  const p = callee.params[i];
+                  if (i < args.length) {
+                    fnEnv.vars[p.name] = args[i];
+                  } else if (Object.prototype.hasOwnProperty.call(kw, p.name)) {
+                    fnEnv.vars[p.name] = kw[p.name];
+                  } else if (p.defaultVal) {
+                    fnEnv.vars[p.name] = await evalExpr(p.defaultVal, callee.closure);
+                  } else {
+                    throw new PyTutorError({
+                      title: `Не вистачає аргументів для ${callee.name}() (TypeError)`,
+                      line: expr.line,
+                      what: `Функція ${callee.name}() очікує параметр «${p.name}», але ти його не передав.`,
+                      fix: `Передай потрібні значення в дужках, наприклад: ${callee.name}(...).`
+                    });
+                  }
+                }
+                if (args.length > callee.params.length) {
+                  throw new PyTutorError({
+                    title: `Забагато аргументів для ${callee.name}() (TypeError)`,
+                    line: expr.line,
+                    what: `Функція ${callee.name}() приймає ${callee.params.length} параметрів, а передано ${args.length}.`,
+                    fix: `Зменш кількість значень у дужках при виклику ${callee.name}().`
+                  });
+                }
+                try {
+                  await execBlock(callee.body, fnEnv);
+                  return null;
+                } catch (sig) {
+                  if (sig instanceof ReturnSignal) return sig.value;
+                  throw sig;
+                }
+              }
+              throw new PyTutorError({
+                title: 'Це не функція (TypeError)',
+                line: expr.line,
+                what: `Об’єкт «${pyStr(callee)}» не можна викликати як функцію з дужками ().`,
+                fix: 'Перевір, чи не названа твоя змінна так само, як і функція.'
+              });
+            }
+          }
+          return null;
+        }
+
+        await execBlock(ast.body, globalEnv);
+      }
+
+      /* ============================================================
+         RUNNER & UI ORCHESTRATION
+         ============================================================ */
+      let activeController = null;
+      let pendingInputResolver = null;
+      let hasAnyOutput = false;
+
+      function clearOutputUI() {
+        consoleOut.innerHTML = '';
+        hasAnyOutput = false;
+        errorCard.classList.remove('visible');
+        inputBar.classList.remove('visible');
+        turtleWrap.classList.remove('visible');
+        turtleEngine.reset();
+      }
+
+      function showError(err, rawLines) {
+        const lineNum = Math.max(1, Math.min(err.line || 1, rawLines.length));
+        const snippet = rawLines[lineNum - 1] ?? '';
+        errorTitle.textContent = err.title || 'Помилка у програмі';
+        errorLineBadge.textContent = `Рядок ${lineNum}`;
+        errorWhat.textContent = err.what;
+        errorWhere.textContent = `Рядок ${lineNum}: ${snippet.trim() || '(порожній рядок)'}`;
+        errorFix.textContent = 'Як виправити: ' + err.fix;
+        errorCard.classList.add('visible');
+        outputPane.scrollTop = 0;
+      }
+
+      function appendConsoleText(text, isEcho = false) {
+        if (!hasAnyOutput) {
+          consoleOut.textContent = '';
+          hasAnyOutput = true;
+        }
+        const span = document.createElement('span');
+        if (isEcho) span.className = 'console-input-echo';
+        span.textContent = text;
+        consoleOut.appendChild(span);
+        outputPane.scrollTop = outputPane.scrollHeight;
+      }
+
+      function submitStdin() {
+        if (!pendingInputResolver) return;
+        const val = stdinInput.value;
+        const resolve = pendingInputResolver;
+        pendingInputResolver = null;
+        inputBar.classList.remove('visible');
+        appendConsoleText((inputPromptLabel.textContent ? inputPromptLabel.textContent + ' ' : '') + val + '\n', true);
+        stdinInput.value = '';
+        resolve(val);
+      }
+
+      stdinSubmit.addEventListener('click', submitStdin);
+      stdinInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submitStdin();
+        }
+      });
+
+      function stopExecution() {
+        if (activeController) {
+          activeController.abort();
+        }
+        if (pendingInputResolver) {
+          const resolve = pendingInputResolver;
+          pendingInputResolver = null;
+          inputBar.classList.remove('visible');
+          resolve('');
+        }
+      }
+
+      async function runCode() {
+        if (activeController) {
+          stopExecution();
+          return;
+        }
+
+        // If user is on full-screen Code tab, switch to Result so output is visible immediately
+        if (appEl.getAttribute('data-view') === 'code') {
+          setViewMode('result');
+        }
+
+        clearOutputUI();
+
+        const source = editor.value;
+        const rawLines = source.replace(/\r\n?/g, '\n').split('\n');
+
+        if (!source.trim()) {
+          consoleOut.innerHTML = '<span class="console-placeholder">Редактор порожній. Напиши код Python і натисни «Запустити».</span>';
+          return;
+        }
+
+        const controller = new AbortController();
+        activeController = controller;
+        runBtn.classList.add('running');
+        runBtn.textContent = '■ Стоп';
+
+        const host = {
+          writeOut(txt) {
+            appendConsoleText(txt);
+          },
+          showTurtle() {
+            if (!turtleWrap.classList.contains('visible')) {
+              turtleWrap.classList.add('visible');
+              requestAnimationFrame(() => turtleEngine.render());
+            }
+          },
+          readInput(promptText) {
+            return new Promise((resolve) => {
+              pendingInputResolver = resolve;
+              inputPromptLabel.textContent = promptText || 'Введи значення (input):';
+              inputBar.classList.add('visible');
+              stdinInput.value = '';
+              setTimeout(() => stdinInput.focus(), 20);
+            });
+          }
+        };
+
+        try {
+          const tokens = tokenize(source);
+          const ast = parse(tokens, rawLines);
+          await executeAst(ast, host, controller.signal);
+
+          if (!hasAnyOutput && !turtleWrap.classList.contains('visible')) {
+            consoleOut.innerHTML = '<span class="console-placeholder">Програму виконано успішно (виводу немає).</span>';
+          }
+        } catch (err) {
+          if (err instanceof PyTutorError) {
+            showError(err, rawLines);
+          } else {
+            showError(
+              new PyTutorError({
+                title: 'Непередбачена помилка',
+                line: 1,
+                what: err?.message || 'Сталася помилка під час виконання коду.',
+                fix: 'Перевір синтаксис коду та спробуй ще раз.'
+              }),
+              rawLines
+            );
+          }
+        } finally {
+          activeController = null;
+          pendingInputResolver = null;
+          inputBar.classList.remove('visible');
+          runBtn.classList.remove('running');
+          runBtn.textContent = '▶ Запустити';
+          if (turtleWrap.classList.contains('visible')) {
+            turtleEngine.render();
+          }
+        }
+      }
+
+      runBtn.addEventListener('click', runCode);
+    })();
+  </script>
+</body>
+</html>
